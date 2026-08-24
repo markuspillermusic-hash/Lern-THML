@@ -1,0 +1,78 @@
+{
+  "$schema": "../../schemas/module-manifest.schema.json",
+  "schemaVersion": "1.0.0",
+  "module": {
+    "id": "musik-10-spannung",
+    "slug": "musik-10-spannung",
+    "title": "Wie entsteht musikalische Spannung?",
+    "subject": "Musik",
+    "grade": "10",
+    "language": "de-DE",
+    "status": "draft"
+  },
+  "curriculum": {
+    "jurisdiction": "Bayern",
+    "framework": "LehrplanPLUS Musik",
+    "version": "bei Projektbeginn prüfen",
+    "tracks": ["Basis", "Vertiefung"]
+  },
+  "versions": {
+    "content": "0.1.0",
+    "classroomCore": "1.3.1",
+    "presentationCore": "1.2.5",
+    "teacherPlatform": "1.0.1",
+    "moduleAdapter": "1.0.0"
+  },
+  "routes": {
+    "student": "/bereiche/musik-10/spannung/",
+    "teacher": "/bereiche/musik-10/spannung/lehrer/",
+    "beamer": "/bereiche/musik-10/spannung/beamer.html",
+    "liveApi": "/bereiche/musik-10/spannung/api/live.php",
+    "feedbackApi": "/api/teacher-platform/feedback.php"
+  },
+  "build": {
+    "source": "src/author.html",
+    "output": "dist",
+    "student": "dist/index.html",
+    "teacher": "dist/lehrer/index.html",
+    "beamer": "dist/beamer.html",
+    "liveApi": "dist/api/live.php",
+    "assetVersion": "starter-0.1.0"
+  },
+  "classroom": {
+    "enabled": true,
+    "persistentStorage": true,
+    "roomLifetime": { "defaultDays": 42, "maximumDays": 365, "teacherEditable": true },
+    "features": ["release", "polls", "cardWall", "timer", "presentation", "media", "imageLightbox", "details", "steppers", "theme"]
+  },
+  "presentation": {
+    "enabled": true,
+    "anchorAttribute": "data-beamer-anchor",
+    "releaseStages": ["einstieg", "analyse", "deutung", "transfer", "all"],
+    "hideNextSection": true,
+    "smoothFollow": true,
+    "mirrors": ["theme", "details", "controls", "images", "audio", "video", "youtube", "steppers", "timeline", "timer"]
+  },
+  "feedback": {
+    "enabled": true,
+    "endpoint": "/api/teacher-platform/feedback.php",
+    "registry": "server/feedback-registry.php",
+    "storesStudentAnswers": false,
+    "tasks": [
+      { "id": "spannung-zusammenfassen", "operator": "zusammenfassen", "afb": "I", "track": "Basis" },
+      { "id": "spannung-analysieren", "operator": "analysieren", "afb": "II", "track": "Basis" },
+      { "id": "spannung-gestalten", "operator": "gestalten und begründen", "afb": "III", "track": "Vertiefung" }
+    ]
+  },
+  "privacy": {
+    "noticeUrl": "/datenschutz-lernplattform/",
+    "localStudentWork": true,
+    "serverStoresStudentAnswers": false,
+    "anonymousRoomState": true
+  },
+  "rights": { "publicationStatus": "cleared", "inventory": "RIGHTS.md" },
+  "qa": {
+    "viewports": ["360x800", "768x1024", "1366x768", "1920x1080"],
+    "requiredChecks": ["manifest", "learningHtml", "viewBundle", "classroomContract", "liveBrowser", "accessibility", "rights", "hashes", "backupRestore"]
+  }
+}

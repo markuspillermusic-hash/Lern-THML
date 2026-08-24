@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+.venv/
+node_modules/
+.DS_Store
+Thumbs.db
+dist/
+qa-output/
+playwright-report/
+test-results/
+*.log
+*.sqlite*
+*.key
+config.php
+.env
+.env.*
+!.env.example

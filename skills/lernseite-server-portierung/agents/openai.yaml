@@ -1,0 +1,4 @@
+﻿interface:
+  display_name: "Lernseiten-Serverportierung"
+  short_description: "Lernseiten sicher synchronisieren und deployen"
+  default_prompt: "Nutze $lernseite-server-portierung, um eine Lernseite in Schüler-, Beamer- und Lehreransicht zu trennen, live zu synchronisieren und sicher zu veröffentlichen."

@@ -1,0 +1,19 @@
+{
+  "session_name": "lernseite_teacher",
+  "teacher_session_key": "lernseite_teacher_authenticated",
+  "csrf_session_key": "lernseite_teacher_csrf",
+  "cookie_path": "/bereiche/fach-11/einheit/",
+  "password_salt_hex": "AUS_GENERATOR_EINSETZEN",
+  "password_hash_hex": "AUS_GENERATOR_EINSETZEN",
+  "password_iterations": 310000,
+  "auth_version": "AUS_GENERATOR_EINSETZEN",
+  "login_title": "Lehreransicht · Unterrichtseinheit",
+  "login_description": "Unterrichtsskript, Lösungen, Beamersteuerung und anonyme Live-Abstimmungen.",
+  "public_url": "../../unterrichtseinheit.html",
+  "data_directory": "/var/lib/lernseiten/unterrichtseinheit-live",
+  "room_ttl": 3628800,
+  "max_history": 20,
+  "base_path": "/bereiche/fach-11/einheit",
+  "document_root": "/var/www/example",
+  "fastcgi_pass": "unix:/run/php/php-fpm.sock"
+}

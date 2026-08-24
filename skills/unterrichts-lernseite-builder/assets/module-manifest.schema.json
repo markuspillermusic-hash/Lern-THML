@@ -1,0 +1,233 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/markuspillermusic-hash/Lern-THML/v1.0.0/schemas/module-manifest.schema.json",
+  "title": "LernHTML-Modulmanifest",
+  "description": "Öffentlicher, geheimnisfreier Vertrag zwischen LernHTML, Klassenraumkern, Lehrerplattform und QA.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "module",
+    "curriculum",
+    "versions",
+    "routes",
+    "build",
+    "classroom",
+    "presentation",
+    "feedback",
+    "privacy",
+    "rights",
+    "qa"
+  ],
+  "properties": {
+    "$schema": { "type": "string", "minLength": 1 },
+    "schemaVersion": { "const": "1.0.0" },
+    "module": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "slug", "title", "subject", "grade", "language", "status"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{2,99}$" },
+        "slug": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{2,99}$" },
+        "title": { "type": "string", "minLength": 3, "maxLength": 160 },
+        "subject": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "grade": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "language": { "type": "string", "pattern": "^[a-z]{2}(?:-[A-Z]{2})?$" },
+        "status": { "enum": ["draft", "pilot", "production", "archived"] }
+      }
+    },
+    "curriculum": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["jurisdiction", "framework", "version", "tracks"],
+      "properties": {
+        "jurisdiction": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "framework": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "version": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "tracks": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[A-Za-z0-9ÄÖÜäöüß._-]{1,30}$" }
+        }
+      }
+    },
+    "versions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["content", "classroomCore", "presentationCore", "teacherPlatform", "moduleAdapter"],
+      "properties": {
+        "content": { "$ref": "#/$defs/semver" },
+        "classroomCore": { "$ref": "#/$defs/semver" },
+        "presentationCore": { "$ref": "#/$defs/semver" },
+        "teacherPlatform": { "$ref": "#/$defs/semver" },
+        "moduleAdapter": { "$ref": "#/$defs/semver" }
+      }
+    },
+    "routes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["student", "teacher", "beamer"],
+      "properties": {
+        "student": { "$ref": "#/$defs/webPath" },
+        "teacher": { "$ref": "#/$defs/webPath" },
+        "beamer": { "$ref": "#/$defs/webPath" },
+        "liveApi": { "$ref": "#/$defs/webPath" },
+        "feedbackApi": { "$ref": "#/$defs/webPath" }
+      }
+    },
+    "build": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "output", "student", "teacher", "beamer", "assetVersion"],
+      "properties": {
+        "source": { "$ref": "#/$defs/localPath" },
+        "output": { "$ref": "#/$defs/localPath" },
+        "student": { "$ref": "#/$defs/localPath" },
+        "teacher": { "$ref": "#/$defs/localPath" },
+        "beamer": { "$ref": "#/$defs/localPath" },
+        "liveApi": { "$ref": "#/$defs/localPath" },
+        "assetVersion": { "type": "string", "pattern": "^[A-Za-z0-9._-]{3,80}$" }
+      }
+    },
+    "classroom": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "persistentStorage", "roomLifetime", "features"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "persistentStorage": { "type": "boolean" },
+        "roomLifetime": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["defaultDays", "maximumDays", "teacherEditable"],
+          "properties": {
+            "defaultDays": { "type": "integer", "minimum": 1, "maximum": 365 },
+            "maximumDays": { "type": "integer", "minimum": 1, "maximum": 365 },
+            "teacherEditable": { "type": "boolean" }
+          }
+        },
+        "features": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": ["release", "polls", "cardWall", "timer", "presentation", "media", "imageLightbox", "details", "steppers", "theme"]
+          }
+        }
+      }
+    },
+    "presentation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "anchorAttribute", "releaseStages", "hideNextSection", "smoothFollow", "mirrors"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "anchorAttribute": { "enum": ["data-beamer-anchor", "data-beamer-step", "data-step-id"] },
+        "releaseStages": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[A-Za-z0-9._-]{1,80}$" }
+        },
+        "hideNextSection": { "const": true },
+        "smoothFollow": { "const": true },
+        "mirrors": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "enum": ["theme", "details", "controls", "images", "audio", "video", "youtube", "steppers", "timeline", "timer"] }
+        }
+      }
+    },
+    "feedback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "storesStudentAnswers", "tasks"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "endpoint": { "$ref": "#/$defs/webPath" },
+        "registry": { "$ref": "#/$defs/localPath" },
+        "storesStudentAnswers": { "const": false },
+        "tasks": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "operator", "afb", "track"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{2,99}$" },
+              "operator": { "type": "string", "minLength": 3, "maxLength": 80 },
+              "afb": { "enum": ["I", "II", "III"] },
+              "track": { "type": "string", "minLength": 1, "maxLength": 30 }
+            }
+          }
+        }
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["noticeUrl", "localStudentWork", "serverStoresStudentAnswers", "anonymousRoomState"],
+      "properties": {
+        "noticeUrl": { "$ref": "#/$defs/webPath" },
+        "localStudentWork": { "const": true },
+        "serverStoresStudentAnswers": { "const": false },
+        "anonymousRoomState": { "const": true }
+      }
+    },
+    "rights": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["publicationStatus", "inventory"],
+      "properties": {
+        "publicationStatus": { "enum": ["cleared", "restricted", "pending"] },
+        "inventory": { "$ref": "#/$defs/localPath" }
+      }
+    },
+    "qa": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["viewports", "requiredChecks"],
+      "properties": {
+        "viewports": {
+          "type": "array",
+          "minItems": 4,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[1-9][0-9]{2,3}x[1-9][0-9]{2,3}$" }
+        },
+        "requiredChecks": {
+          "type": "array",
+          "minItems": 3,
+          "uniqueItems": true,
+          "items": { "enum": ["manifest", "learningHtml", "viewBundle", "classroomContract", "liveBrowser", "accessibility", "rights", "hashes", "backupRestore"] }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "classroom": { "properties": { "enabled": { "const": true } } } } },
+      "then": {
+        "properties": {
+          "classroom": { "properties": { "persistentStorage": { "const": true } } },
+          "routes": { "required": ["liveApi"] },
+          "build": { "required": ["liveApi"] }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "feedback": { "properties": { "enabled": { "const": true } } } } },
+      "then": {
+        "properties": {
+          "feedback": { "required": ["endpoint", "registry"], "properties": { "tasks": { "minItems": 1 } } },
+          "routes": { "required": ["feedbackApi"] }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "semver": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$" },
+    "webPath": { "type": "string", "pattern": "^/[^?#]*$" },
+    "localPath": { "type": "string", "minLength": 1, "pattern": "^(?![A-Za-z]:|/|\\\\)(?!.*(?:^|[\\\\/])\\.\\.(?:[\\\\/]|$)).+$" }
+  }
+}

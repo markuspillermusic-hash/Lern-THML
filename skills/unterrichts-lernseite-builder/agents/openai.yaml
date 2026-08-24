@@ -1,0 +1,4 @@
+interface:
+  display_name: "Unterrichts-Lernseite Builder"
+  short_description: "Fachübergreifende LernHTMLs mit Klassenraum und KI-Feedback"
+  default_prompt: "Nutze $unterrichts-lernseite-builder, um eine didaktisch stringente LernHTML aus einer Autorenquelle mit Schüler-, Lehrer- und Beameransicht, operatorengestützten Aufgaben, optionalem Klassenraum und serverseitigem KI-Feedback zu erstellen und zu prüfen."

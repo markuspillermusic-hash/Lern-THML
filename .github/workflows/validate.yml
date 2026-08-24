@@ -1,0 +1,25 @@
+name: validate
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  starter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: pdo_sqlite, sodium, openssl
+      - run: pip install -r requirements-dev.txt
+      - run: python tools/release_check.py templates/module-starter
+      - run: python -m py_compile tools/*.py templates/module-starter/tools/*.py
+      - run: python tools/validate_skill_package.py skills/unterrichts-lernseite-builder
+      - run: python tools/validate_skill_package.py skills/lernseite-server-portierung
+      - run: php -l templates/module-starter/dist/api/live.php
+      - run: find packages/teacher-platform-v1 -name '*.php' -print0 | xargs -0 -n1 php -l
+      - run: php packages/teacher-platform-v1/tests/run.php

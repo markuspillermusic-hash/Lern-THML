@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Wie entsteht musikalische Spannung? – LernHTML</title>
+  <link rel="stylesheet" href="assets/module.css">
+  <link rel="stylesheet" href="assets/classroom.css">
+  <link rel="stylesheet" href="assets/feedback.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-brand"><strong>Musik · LernHTML</strong><span>Wie entsteht musikalische Spannung?</span></div>
+    <div class="view-switcher" data-classroom-header-optional>Schüler · Lehrer · Beamer aus einer Quelle</div>
+    <nav aria-label="Lernweg"><a href="#einstieg">Einstieg</a><a href="#analyse">Analyse</a><a href="#deutung">Deutung</a><a href="#transfer">Transfer</a></nav>
+  </header>
+  <main>
+    <section id="classroom" class="lesson-section" data-release-stage="einstieg" data-beamer-anchor="classroom">
+      <p class="eyebrow">Gemeinsam arbeiten</p><h1>Wie entsteht musikalische Spannung?</h1>
+      <div data-classroom-manager></div><div data-classroom-join></div>
+    </section>
+    <section id="einstieg" class="lesson-section" data-release-stage="einstieg" data-beamer-anchor="einstieg">
+      <p class="eyebrow">Wahrnehmen vor Erklären</p><h2>Eine Erwartung entsteht</h2>
+      <div class="music-pattern" role="img" aria-label="Abstrakte Folge ansteigender Töne, deren letzter Ton offenbleibt"><span>●</span><span>●</span><span>●</span><span>?</span></div>
+      <label>Beschreibe genau, welche Fortsetzung du erwartest und woran du das festmachst.<textarea data-local-key="einstieg"></textarea></label>
+    </section>
+    <section id="analyse" class="lesson-section" data-release-stage="analyse" data-beamer-anchor="analyse">
+      <p class="eyebrow">Operator · AFB I</p><h2>Material erschließen</h2>
+      <article class="source-text"><p>Musikalische Spannung entsteht, wenn ein Verlauf Erwartungen aufbaut und ihre Erfüllung verzögert. Wiederholung macht ein Muster erkennbar; Abweichung, Dissonanz, Beschleunigung, Verdichtung oder ein offener Schluss können dieses Muster unterbrechen. Das Mittel allein „ist“ jedoch noch nicht spannend. Seine Wirkung hängt davon ab, welche Regel Hörende zuvor erkannt haben und wie der weitere Verlauf diese Erwartung behandelt.</p></article>
+      <aside class="operator-info"><strong>Operator: zusammenfassen</strong><p>Eine Zusammenfassung nennt nicht nur, worum es geht. Sie macht den konkreten Gedankengang so verständlich, dass Leserinnen und Leser den Inhalt des Ausgangstextes kennenlernen.</p></aside>
+      <div data-feedback-task="spannung-zusammenfassen"><label>1. Fasse den Text prägnant zusammen.<textarea data-local-key="zusammenfassung"></textarea></label></div>
+      <div data-feedback-task="spannung-analysieren"><label>2. Analysiere, wie der Text musikalisches Mittel, Erwartung und Wirkung aufeinander bezieht.<textarea data-local-key="analyse"></textarea></label></div>
+      <label>3. Formuliere eine offene Frage, die sich aus dem Text für die Höranalyse ergibt.<textarea data-local-key="frage"></textarea></label>
+      <details data-classroom-details-key="eh-analyse" data-rolle="lehrer"><summary>Erwartungshorizont</summary><p>Konkreter Gedankengang; Verhältnis von Muster, Abweichung und Kontext; fachsprachlich klare Unterscheidung von Mittel und Wirkung.</p></details>
+    </section>
+    <section id="deutung" class="lesson-section" data-release-stage="deutung" data-beamer-anchor="deutung">
+      <p class="eyebrow">Gemeinsame Hypothesen</p><h2>Was trägt wie zur Wirkung bei?</h2>
+      <div data-classroom-card-wall="spannungsfaktoren" data-categories="Melodik,Rhythmik,Harmonik,Klang,Form"></div>
+      <div data-classroom-poll="staerkstes-indiz"></div>
+    </section>
+    <section id="transfer" class="lesson-section" data-release-stage="transfer" data-beamer-anchor="transfer">
+      <p class="eyebrow">Operator · AFB III · Vertiefung</p><h2>Gestalten und begründen</h2>
+      <div data-feedback-task="spannung-gestalten"><label>Entwirf eine achttaktige Spannungskurve. Beschreibe deine musikalischen Entscheidungen und begründe, wie sie Hörerwartungen lenken.<textarea data-local-key="transfer"></textarea></label></div>
+      <details data-classroom-details-key="eh-transfer" data-rolle="lehrer"><summary>Erwartungshorizont</summary><p>Schlüssiger Verlauf, bewusster Einsatz mehrerer Parameter, funktionale Begründung, reflektierter Bezug auf die erwartete Hörwirkung.</p></details>
+    </section>
+  </main>
+  <script>/*__ROLE_CONFIG__*/</script>
+  <script src="assets/qrcode-generator.js"></script>
+  <script src="assets/classroom-core.js"></script>
+  <script src="assets/presentation-core.js"></script>
+  <script src="assets/feedback-client.js"></script>
+  <script src="assets/module.js"></script>
+</body>
+</html>
