@@ -1,4 +1,4 @@
-# Klassenraumkern v1.3.1 – Architekturentscheidung
+# Klassenraumkern v1.4.0 – Architekturentscheidung
 
 Stand: 24. August 2026
 
@@ -71,3 +71,9 @@ Seit v1.2.5 ist auch die optionale Kopfzeile der Schüleransicht einklappbar; de
 Seit v1.3.0 kann ein Modul an die zentrale Lehrerplattform angebunden werden. Die Lehrerroute verwendet dann die zentrale Sitzung, neue Räume werden einem Konto gespiegelt und KI-Feedback wird ausschließlich über serverseitig registrierte Aufgaben und den verschlüsselten Konto-/Organisationstresor freigegeben. Seitenspezifische Passwort- oder Schlüsselverwaltung ist in diesem Modus unzulässig.
 
 Seit Klassenraumkern v1.3.1 und Präsentationskern v1.2.5 sind Standardbezeichnungen fachneutral. Die älteren globalen `RELIGION_*`-Namen bleiben bis zu einer bewusst inkompatiblen Hauptversion erhalten, damit bestehende Lernseiten weiterhin funktionieren.
+
+Seit v1.4.0 kann eine registrierte Feedbackaufgabe mehrere zusammengehörige
+Textfelder als beschriftetes Antwortbündel übertragen. Bei Stellungnahmen,
+Beurteilungen und Erörterungen zeigt der Schülerclient ausdrücklich an, dass
+nicht Meinung oder Ergebnis, sondern Fachbezug, Kriterien, Argumente,
+Gegenargumente und Abwägung rückgemeldet werden.

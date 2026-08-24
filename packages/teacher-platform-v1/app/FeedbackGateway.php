@@ -56,7 +56,7 @@ final class FeedbackGateway
                 'feedback' => $result['feedback'],
                 'operator' => $task['operator'],
                 'afb' => $task['afb'],
-                'notice' => 'Formative Überarbeitungshilfe – keine Note und kein amtlicher Erwartungshorizont.',
+                'notice' => 'Formative Überarbeitungshilfe – keine Note und kein amtlicher Erwartungshorizont. Bei Urteilen wird die Begründungsqualität, nicht die vertretene Meinung bewertet.',
             ];
         } catch (\Throwable $error) {
             $latency = (int)((hrtime(true) - $started) / 1_000_000);

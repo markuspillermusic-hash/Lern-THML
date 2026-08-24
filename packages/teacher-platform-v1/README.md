@@ -1,4 +1,4 @@
-# Teacher Platform v1
+# Teacher Platform v1.0.2
 
 Referenzimplementierung für persönliche Lehrerkonten, Organisationen,
 Zugriffsanfragen, mehrwöchige Kursräume und serverseitiges KI-Feedback.
@@ -24,3 +24,11 @@ Hauptschlüssel dürfen nicht ins Repository oder in den Webroot gelangen.
 Die enthaltenen Registry-Dateien sind Beispiele. Ein produktives Modul erhält
 eine eigene serverseitige Feedback-Registry, deren Aufgaben-IDs exakt zum
 Modulmanifest passen.
+
+Seit v1.0.2 bewertet der globale Feedbackvertrag bei AFB-III-Aufgaben niemals
+die persönliche Meinung oder die gewählte Schlussposition. Er prüft
+ausschließlich Fachlichkeit, Materialbezug, offengelegte Kriterien, Argumente,
+Gegenargumente und Abwägung; gegensätzliche tragfähige Urteile sind
+gleichberechtigt. Fachlich verlangte Perspektiven – etwa ein christliches
+Sachurteil – werden geprüft, ohne eine persönliche Identifikation zu
+unterstellen.

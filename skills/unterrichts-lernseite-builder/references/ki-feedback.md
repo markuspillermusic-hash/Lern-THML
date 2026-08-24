@@ -34,6 +34,22 @@ Verbesserungsschritt, fachlicher/argumentativer Hinweis und konkrete
 Überarbeitungsfrage. Keine fertige Musterlösung ausgeben. Unsicherheit benennen,
 keine Note simulieren und nur Kriterien anwenden, die der Aufgabe entsprechen.
 
+## Urteile und Stellungnahmen
+
+- Nicht die persönliche Meinung, Überzeugung oder Schlussposition bewerten.
+  Maßgeblich sind Sachrichtigkeit, Materialbezug, offengelegte Kriterien,
+  Argumente, Gegenargumente, Abwägung und Folgerichtigkeit.
+- Das Aufgabenraster muss gegensätzliche, sachlich vertretbare Ergebnisse
+  zulassen. Zwei gleich gut begründete Gegenpositionen erhalten eine
+  gleichwertige Rückmeldung.
+- Keine private politische, religiöse, gesundheitliche oder biografische
+  Offenlegung verlangen. Wo ein Fachprofil es trägt, darf stattdessen ein
+  Sachurteil aus einer ausdrücklich benannten fachlichen Perspektive verlangt
+  werden; bewertet wird dann deren korrekte Anwendung, nicht die persönliche
+  Identifikation mit ihr.
+- Vor Release jede Urteilsaufgabe mit mindestens zwei gegensätzlichen starken
+  Antworten testen und auf versteckte Ergebnispräferenz prüfen.
+
 ## Datenschutz und Betrieb
 
 Vor dem Senden auf Namen und sensible Angaben hinweisen. Schülertext nur für den

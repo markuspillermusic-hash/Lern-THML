@@ -75,6 +75,10 @@ Verlässlichkeit sind gleichrangige Releasebedingungen.
   Schüler- oder Beamerdatei; CSS-Ausblenden ist kein Schutz.
 - Schülertexte lokal halten. KI-Feedback nur über das serverseitige Gateway und
   nur nach eigener Bearbeitung anbieten; Antworten nicht serverseitig speichern.
+- Bei Stellungnahmen, Beurteilungen und Erörterungen die Qualität von
+  Fachbezug, Kriterien, Argumenten, Gegenargumenten und Abwägung bewerten – nie
+  die persönliche Meinung oder das gewählte Ergebnis. Gegensätzliche,
+  gleichwertig begründete Urteile müssen gleichwertig rückmeldbar sein.
 - Klassenräume einem persönlichen Lehrerkonto zuordnen, flexibel per Kalender
   befristen, verlängern und früh beenden können.
 - Auf dem Beamer nie den nächsten noch nicht freigegebenen Hauptabschnitt zeigen.
