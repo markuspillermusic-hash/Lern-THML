@@ -1,4 +1,8 @@
 :root{--work-surface:#fff;--work-ink:#17344b;--work-muted:#536878;--work-border:#9db1c0;--work-action:#176771;--work-on-action:#fff;--work-back:#edf3f7}
+.work-inspector-dialog[open]{display:flex;flex-direction:column;gap:.6rem;box-sizing:border-box;height:90vh;height:90dvh;max-height:calc(100dvh - 1rem);overflow:hidden}
+.work-inspector-dialog>button{align-self:flex-start;flex:none}
+.work-inspector-dialog>iframe{flex:1;min-height:0}
+@media(max-width:720px){.work-dialog.work-inspector-dialog{width:calc(100vw - 1rem);padding:.7rem;margin:auto}}
 :root .has-teaching-entry,:root .teaching-entry{--white:var(--work-surface);--ink:var(--work-ink);--muted:var(--work-muted);--accent:var(--work-action);--line:var(--work-border);--f2:var(--work-border);--paper-2:var(--work-back);--paper2:var(--work-back)}
 :root .has-teaching-entry .live-room-ready,:root .has-teaching-entry details,:root .teaching-entry details{background:var(--work-back);color:var(--work-ink)}
 :root .has-teaching-entry .live-btn:not(.ghost),:root .teaching-entry .live-btn:not(.ghost){background:var(--work-action);color:var(--work-on-action);border-color:var(--work-action)}

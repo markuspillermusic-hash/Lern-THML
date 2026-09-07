@@ -10,6 +10,11 @@
     let session,busy=false,requestId='',lastSelection='';
     try{session=await request('session',{module_slug:slug});}catch(error){status.textContent=error.message+' Bitte die Seite neu laden.';return;}
     if(!session.authenticated||session.kind!=='teacher'||!session.learning_enabled||!core?.startTeaching){status.textContent='Bitte als Lehrkraft im gemeinsamen Zugang anmelden und die Seite neu laden.';return;}
+    const temporaryKey='religion:teaching-start:'+slug+':'+session.teacher_user_id;
+    function rememberTemporary(result,id){try{
+      if(result.teaching.mode==='temporary')sessionStorage.setItem(temporaryKey,JSON.stringify({room:core.room(),requestId:id,expiresAt:Number(core.state()?.expiresAt||0)}));
+      else sessionStorage.removeItem(temporaryKey);
+    }catch(error){/* Without session storage the explicit room controls remain available. */}}
     const select=el('select',undefined,{id:'teaching-class','aria-label':'Klasse auswählen'});
     select.append(el('option','Bitte auswählen …',{value:''}),el('option','Ohne Klasse · temporärer Unterricht',{value:'temporary'}));
     (session.classes||[]).filter(c=>c.status==='active'&&c.can_teach).forEach(c=>select.append(el('option',`${c.label} · ${c.school_year}`,{value:c.id})));
@@ -58,6 +63,7 @@
       busy=true;begin.disabled=true;select.disabled=true;assignmentSelect.disabled=true;status.textContent='Unterricht wird geöffnet …';
       try{
         const usedRequest=requestId,result=await core.startTeaching({mode,class_id:mode==='class'?selected:'',assignment_id:mode==='class'?assignment:'',request_id:requestId,csrf:session.csrf,label:cfg.moduleLabel||document.title,retention_days:Number(retention.value)});
+        rememberTemporary(result,usedRequest);
         // A lost response retains the request key. A successful new start refreshes the candidates.
         session=await request('session',{module_slug:slug});
         updateSelection();if(result.teaching.assignment_id)assignmentSelect.value=result.teaching.assignment_id;
@@ -68,11 +74,18 @@
       renderActive();
     };
     notes.onclick=()=>{const context=core.teaching?.();if(!context?.assignment_id)return;
-      const dialog=el('dialog',undefined,{class:'work-dialog'}),close=el('button','Schließen',{type:'button'}),frame=el('iframe',undefined,{title:'Schülerstände dieses Unterrichts',src:'/zugang/arbeiten/?'+new URLSearchParams({module:slug,room:core.room(),assignment:context.assignment_id})});
+      const dialog=el('dialog',undefined,{class:'work-dialog work-inspector-dialog'}),close=el('button','Schließen',{type:'button'}),frame=el('iframe',undefined,{title:'Schülerstände dieses Unterrichts',src:'/zugang/arbeiten/?'+new URLSearchParams({module:slug,room:core.room(),assignment:context.assignment_id})});
       frame.style.cssText='width:100%;height:72vh;border:0';dialog.append(close,frame);document.body.append(dialog);close.onclick=()=>dialog.close();dialog.addEventListener('close',()=>dialog.remove());dialog.showModal();
     };
     const active=(session.assignments||[]).find(a=>a.room_code&&a.room_code===core.room()&&Number(a.created_by)===Number(session.teacher_user_id));
     if(active){select.value=active.class_id;updateSelection();assignmentSelect.value=active.id;core.restoreTeachingContext?.({room:active.room_code,mode:'class',assignment_id:active.id,class_id:active.class_id,class_label:active.class_label,label:active.label});}
+    else try{
+      const previous=JSON.parse(sessionStorage.getItem(temporaryKey)||'null');
+      if(previous&&previous.room===core.room()&&previous.expiresAt>Date.now()/1000&&/^[a-f0-9]{32}$/.test(previous.requestId)){
+        select.value='temporary';updateSelection();requestId=previous.requestId;lastSelection='temporary|';begin.textContent='Unterricht fortsetzen';
+        core.restoreTeachingContext?.({room:previous.room,mode:'temporary',assignment_id:null,class_id:null,class_label:null,label:'Ohne Klasse'});
+      }
+    }catch(error){/* A malformed local hint never starts an anonymous room. */}
     document.addEventListener('religion-classroom-state',renderActive);renderActive();
   }};
 })();

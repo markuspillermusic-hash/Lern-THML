@@ -6,7 +6,8 @@
   var VIEW=CONFIG.view||window.RELIGION_VIEW||(document.body.classList.contains("beamer-view")||document.body.classList.contains("beamer")?"beamer":document.body.classList.contains("lehrer")||document.body.classList.contains("teacher-view")?"teacher":"student");
   var MODULE_ID=String(CONFIG.moduleId||"learning-html-module");
   var MODULE_LABEL=String(CONFIG.moduleLabel||document.title||"LernHTML");
-  var ROOM_KEY=String(CONFIG.roomStorageKey||MODULE_ID+"-classroom-room-v1"),ROOMS_KEY=String(CONFIG.roomsStorageKey||MODULE_ID+"-classroom-rooms-v1"),TEACHER_CODE_KEY=String(CONFIG.teacherCodeStorageKey||"learning-html-teacher-code-v1"),MATERIAL_ACCESS_KEY=String(CONFIG.materialAccessStorageKey||MODULE_ID+"-course-access-v1"),room=readLocal(ROOM_KEY)||"",materialAccessKey=accessKeyClean(readLocal(MATERIAL_ACCESS_KEY)||""),pollTimer=null,current=null;
+  var BASE_ROOM_KEY=String(CONFIG.roomStorageKey||MODULE_ID+"-classroom-room-v1");
+  var ROOM_KEY=BASE_ROOM_KEY+(VIEW==="beamer"?"-beamer":""),ROOMS_KEY=String(CONFIG.roomsStorageKey||MODULE_ID+"-classroom-rooms-v1"),TEACHER_CODE_KEY=String(CONFIG.teacherCodeStorageKey||"learning-html-teacher-code-v1"),MATERIAL_ACCESS_KEY=String(CONFIG.materialAccessStorageKey||MODULE_ID+"-course-access-v1"),room=initialRoom(),materialAccessKey=accessKeyClean(readLocal(MATERIAL_ACCESS_KEY)||""),pollTimer=null,current=null;
   var configuredStages=Array.isArray(CONFIG.releaseStages)?CONFIG.releaseStages:[];
   var RELEASE_STAGES=(configuredStages.length?configuredStages:["einstieg","fall","st1","st2","st3","st4","st5","sicherung","bilanz","check","weiterdenken"]).filter(function(id){var node=document.getElementById(id);return node&&node.tagName==="SECTION";}),releasePending="",releaseGate=null,releaseNavGuardInstalled=false;
   var ROOM_PARAM=String(CONFIG.roomParam||"room"),ROOM_PARAM_ALIASES=Array.isArray(CONFIG.roomParamAliases)?CONFIG.roomParamAliases:["room","raum"],MATERIAL_ACCESS_PARAM=String(CONFIG.materialAccessParam||"zugang");
@@ -20,7 +21,7 @@
   var POLLS=(Array.isArray(CONFIG.polls)?CONFIG.polls:DEFAULT_POLLS).map(function(poll){return {id:String(poll.id||""),q:String(poll.q||poll.question||""),o:Array.isArray(poll.o)?poll.o.slice():Array.isArray(poll.options)?poll.options.slice():[],policy:poll.policy==="beamer"?"beamer":"store"};}).filter(function(poll){return poll.id&&poll.q&&poll.o.length>=2;});
   var CARD_WALLS=(Array.isArray(CONFIG.cardWalls)?CONFIG.cardWalls:[]).map(function(wall){var categories=(Array.isArray(wall.categories)?wall.categories:[]).map(function(category,index){if(typeof category==="string")return{id:"c"+(index+1),label:category};return{id:String(category.id||("c"+(index+1))),label:String(category.label||category.title||category.id||("Kategorie "+(index+1)))};}).filter(function(category){return/^[A-Za-z0-9_-]{1,80}$/.test(category.id)&&category.label;});return{id:String(wall.id||""),title:String(wall.title||"Gemeinsame Kartenwand"),prompt:String(wall.prompt||"Formuliere einen kurzen Gedanken."),categories:categories};}).filter(function(wall){return/^[A-Za-z0-9_-]{1,80}$/.test(wall.id)&&wall.categories.length>=1;});
   var MANAGER_SELECTOR=String(CONFIG.managerSelector||"[data-classroom-manager],#live-room-management-anchor,[data-live-room-root]");
-  var teachingContext=null;
+  var teachingContext=null,assignedTeaching=false;
   var JOIN_SELECTOR=String(CONFIG.joinSelector||"[data-classroom-join],[data-live-join]");
   var PUBLIC_ACTIVITY_SELECTOR=".live-inline-anchor[data-live-poll],[data-live-poll-host],[data-classroom-poll],[data-classroom-quiz]";
   var CARD_WALL_SELECTOR="[data-classroom-card-wall]";
@@ -35,7 +36,8 @@
   function cardColumnsHtml(config,cards,moderation){return '<div class="live-card-wall-columns">'+config.categories.map(function(category){var categoryCards=(cards||[]).filter(function(card){return card.category===category.id;});return '<section class="live-card-wall-column"><h4>'+esc(category.label)+' <span>'+categoryCards.length+'</span></h4><div class="live-card-wall-stack">'+(categoryCards.length?categoryCards.map(function(card){return '<article class="live-class-card"><p>'+esc(card.text)+'</p>'+(moderation?'<div class="live-card-actions"><button class="live-btn" type="button" data-card-approve="'+esc(card.id)+'">Freigeben</button><button class="live-btn ghost" type="button" data-card-reject="'+esc(card.id)+'">Verwerfen</button></div>':'')+'</article>';}).join(''):'<p class="live-empty">Noch keine freigegebene Karte.</p>')+'</div></section>';}).join('')+'</div>';}
 
   function readLocal(key){try{return localStorage.getItem(key)||"";}catch(e){return "";}}
-  function writeLocal(key,value){try{if(value)localStorage.setItem(key,value);else localStorage.removeItem(key);}catch(e){}}
+  function writeLocal(key,value){try{if(value)localStorage.setItem(key,value);else localStorage.removeItem(key);}catch(e){}if(key===ROOM_KEY&&(VIEW==="teacher"||VIEW==="beamer")){try{sessionStorage.setItem(key,value||"");}catch(e){}}}
+  function initialRoom(){if(VIEW==="teacher"||VIEW==="beamer"){try{var remembered=sessionStorage.getItem(ROOM_KEY);if(remembered!==null)return codeClean(remembered);}catch(e){}}return readLocal(ROOM_KEY)||(VIEW==="beamer"?readLocal(BASE_ROOM_KEY):"")||"";}
   function readSession(key){try{return sessionStorage.getItem(key)||"";}catch(e){return "";}}
   function writeSession(key,value){try{sessionStorage.setItem(key,value);}catch(e){}}
   function esc(value){return String(value==null?"":value).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
@@ -159,7 +161,7 @@
     document.addEventListener("keydown",function(e){if(backdrop.hidden)return;if(e.key==="Escape"){close();return;}if(e.key!=="Tab")return;var nodes=backdrop.querySelectorAll('button:not([disabled]),input:not([disabled])');if(!nodes.length)return;var first=nodes[0],last=nodes[nodes.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}});
 
     function hostMatches(host,poll){var id=String(poll&&poll.templateId||"");return pollHostId(host)===id||quizHostId(host)===id;}
-    function connectionLine(){return '<div class="live-session-line"><span>Stunde <b>'+esc(room||"nicht verbunden")+'</b></span><button class="live-link-button" type="button" data-change-code>'+(room?'Code wechseln':'Code eingeben')+'</button></div>';}
+    function connectionLine(){if(assignedTeaching)return '<div class="live-session-line"><span>'+ (room?'Mit deinem Unterricht verbunden':'Die Lehrkraft öffnet den Live-Unterricht')+'</span></div>';return '<div class="live-session-line"><span>Stunde <b>'+esc(room||"nicht verbunden")+'</b></span><button class="live-link-button" type="button" data-change-code>'+(room?'Code wechseln':'Code eingeben')+'</button></div>';}
     function expectedQuestion(host){var pollId=pollHostId(host),quizId=quizHostId(host),expected=pollId?pollById(pollId):null,check=quizId?classCheck(quizId):null;return expected?'<p class="live-question">'+esc(expected.q)+'</p>':check&&check.questions.length?'<p class="live-question">'+esc(check.title)+'</p>':"";}
     function bindChangeCode(container){container.querySelectorAll("[data-change-code]").forEach(function(button){button.addEventListener("click",open);});}
     function renderWaiting(message){inlineHosts.forEach(function(host){host.classList.add("live-student-inline");host.innerHTML=connectionLine()+expectedQuestion(host)+'<p class="live-waiting">'+esc(message)+'</p>';bindChangeCode(host);});}
@@ -189,7 +191,20 @@
       inlineHosts.forEach(function(host){host.classList.add("live-student-inline");if(data.poll&&hostMatches(host,data.poll)){if(data.poll.type==="quiz"){var quizView=(data.poll.closed?"closed":"open")+"-"+(data.poll.reveal?"reveal":"hidden");if(host.dataset.quizPoll!==data.poll.id||host.dataset.quizView!==quizView||host.dataset.quizForce)renderQuizInto(host,data);}else renderPollInto(host,data);}else{delete host.dataset.quizPoll;delete host.dataset.quizView;host.innerHTML=connectionLine()+expectedQuestion(host)+'<p class="live-waiting">'+(data.poll?'Die aktuelle Abstimmung gehört zu einem anderen Abschnitt.':'Die Abstimmung wird von der Lehrkraft an dieser Stelle geöffnet.')+'</p>';bindChangeCode(host);}});
       if(data.poll){if(data.poll.type==="quiz"){var modalQuizView=(data.poll.closed?"closed":"open")+"-"+(data.poll.reveal?"reveal":"hidden");if(modalPoll.dataset.quizPoll!==data.poll.id||modalPoll.dataset.quizView!==modalQuizView||modalPoll.dataset.quizForce)renderQuizInto(modalPoll,data);}else renderPollInto(modalPoll,data);}else{delete modalPoll.dataset.quizPoll;delete modalPoll.dataset.quizView;modalPoll.innerHTML='<p class="live-question">Verbunden mit <b>'+esc(roomTitle(data))+'</b>.</p><p>Die nächste Abstimmung ist noch nicht gestartet.</p>';}
     }
-    function refresh(){if(!room)return;request("status",{room:room}).then(render).catch(function(err){if(err.status===404){room="";current=null;writeLocal(ROOM_KEY,"");launcher.dataset.active="false";applyStudentRelease(null);announceState(null);}setStatus(err.message,true);modalPoll.innerHTML="";inlineHosts.forEach(function(host){host.innerHTML=connectionLine()+expectedQuestion(host)+'<p class="live-status error">'+esc(err.message)+'</p>';bindChangeCode(host);});});}
+    function refresh(){if(!room)return;var requestedRoom=room;request("status",{room:requestedRoom}).then(function(data){if(room===requestedRoom)render(data);}).catch(function(err){if(room!==requestedRoom)return;if(err.status===404){room="";current=null;writeLocal(ROOM_KEY,"");launcher.dataset.active="false";applyStudentRelease(null);announceState(null);}setStatus(err.message,true);modalPoll.innerHTML="";inlineHosts.forEach(function(host){host.innerHTML=connectionLine()+expectedQuestion(host)+'<p class="live-status error">'+esc(err.message)+'</p>';bindChangeCode(host);});});}
+    window.RELIGION_CLASSROOM.setAssignedTeaching=function(value){
+      var next=Boolean(value);if(next===assignedTeaching)return;assignedTeaching=next;
+      if(joinHost)joinHost.hidden=next;
+      backdrop.querySelector('.live-join').hidden=next;
+      [modalInput,pageInput].filter(Boolean).forEach(function(input){input.disabled=next;});
+      backdrop.querySelector('#live-connect').disabled=next;
+      launcher.textContent=next?'Unterricht':'Stundencode';
+      backdrop.querySelector('#live-title').textContent=next?'Dein Live-Unterricht':'Mit der Stunde verbinden';
+      backdrop.querySelector('.live-panel-head p').textContent=next?'Die Verbindung folgt deinem zugewiesenen Unterricht.':'Ein Code verbindet Ablauf, Abstimmungen und Timer.';
+      // Quiz contents normally stay stable while answering; refresh their connection line once.
+      inlineHosts.concat([modalPoll]).forEach(function(host){host.dataset.quizForce='1';});
+      if(room)refresh();else renderWaiting(next?'Die Lehrkraft öffnet den Live-Unterricht.':'Bitte zuerst mit dem Stundencode beitreten.');
+    };
     if(room){applyStudentRelease({room:room,releasedStage:RELEASE_STAGES[0]});setStatus("Zuletzt verwendeter Code: "+room+". Verbindung wird geprüft …");}else{applyStudentRelease(null);setStatus("Noch nicht mit einer Stunde verbunden.");renderWaiting("Bitte zuerst mit dem Stundencode beitreten.");updateStudentWalls(null);}startPolling(function(){if(room)refresh();},2200);
   }
 

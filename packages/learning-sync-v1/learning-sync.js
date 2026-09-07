@@ -25,7 +25,7 @@
       const bar=el('section',undefined,{class:'learning-sync-bar'});bar.append(el('strong','Klasse und Schülerstände'),el('p','Lernweg einer Klasse zuweisen, Mitschriften abrufen und eine ausgewählte Lösung am Beamer zeigen.'));
       const actions=el('div',undefined,{class:'work-actions'}),button=el('button','Schülerstände öffnen',{type:'button'}),link=el('a','Gemeinsame Klassenverwaltung',{href:'/zugang/?view=classes',target:'_blank',rel:'noopener'});actions.append(button,link);bar.append(actions);target.append(bar);
       button.addEventListener('click',()=>{if(location.protocol==='file:'){alert('Die Schülerstände sind in der Serverversion verfügbar.');return;}
-        const dialog=el('dialog',undefined,{class:'work-dialog'}),close=el('button','Schließen',{type:'button'}),frame=el('iframe',undefined,{title:'Klassen und Schülerstände',src:'/zugang/arbeiten/?'+new URLSearchParams({module:slug,room:window.RELIGION_CLASSROOM?.room()||''})});
+        const dialog=el('dialog',undefined,{class:'work-dialog work-inspector-dialog'}),close=el('button','Schließen',{type:'button'}),frame=el('iframe',undefined,{title:'Klassen und Schülerstände',src:'/zugang/arbeiten/?'+new URLSearchParams({module:slug,room:window.RELIGION_CLASSROOM?.room()||''})});
         frame.style.cssText='width:100%;height:72vh;border:0';dialog.append(close,frame);document.body.append(dialog);close.onclick=()=>dialog.close();dialog.addEventListener('close',()=>dialog.remove());dialog.showModal();
       });
     }
@@ -47,6 +47,7 @@
     function syncTeachingContext(selected){
       const nextRoom=selected?.room_code||'',classroom=window.RELIGION_CLASSROOM;
       if(nextRoom!==String(classroom?.room()||'')){if(nextRoom)classroom?.setRoom(nextRoom);else classroom?.clearRoom();}
+      classroom?.setAssignedTeaching?.(Boolean(selected));
       window.RELIGION_COURSE_MATERIALS?.setAccess(selected?.material_access_key||'');
     }
     function hidePersonalContext(message){

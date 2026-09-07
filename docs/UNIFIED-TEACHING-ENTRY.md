@@ -27,13 +27,13 @@ Mehrere Lehrkräfte oder Lerngruppen dürfen nicht auf denselben globalen Klasse
 - Beendete Live-Verbindung wird nicht erneut angeboten; Mitschriften bleiben davon unberührt.
 - Nachweis: sechs Tests des echten JavaScript-Adapters und 97 PHP-Prüfungen. Noch nicht produktiv ausgerollt.
 
-## Nächste Implementierung und Abnahme
+## Integrations- und Abnahmeplan
 
-1. Einen serverseitig geprüften Start-/Fortsetzungsablauf mit Parallelklickschutz implementieren; vorhandene Raum-API verwenden, keinen zweiten Live-Kern bauen.
-2. Klassenwahl und Startknopf direkt am vorhandenen Lehrer-Einstieg integrieren; Schülerstände mit aktueller Zuweisung öffnen. Alte Steuerelemente nicht nur zusätzlich daneben stehen lassen.
-3. Den anonymen und persönlichen Schüler-Einstieg eindeutig unterscheiden. Der persönliche Link wählt die zugewiesene Arbeit; es gibt keinen zusätzlichen manuellen Raumbeitritt.
-4. Mit synthetischen Konten zwei Lehrkräfte, zwei Klassen, Wiederaufnahme, Raumende, Konto-/Klassenwechsel, fehlende Rechte und verlorene Netzwerkantworten im Browser prüfen.
-5. Ethik-Build mit dessen parallel bearbeiteter Autorenquelle koordinieren. Aktuell lokal Inhalt 1.11.0 / Cache v20, produktiv 1.10.0 / v19; keine ungeprüfte Veröffentlichung der lokalen Inhaltsänderungen.
+1. Implementiert: serverseitig geprüfter Start-/Fortsetzungsablauf mit Parallelklickschutz auf der vorhandenen Raum-API.
+2. Implementiert und in der vollständigen lokalen Lehreransicht geprüft: Klassenwahl, Startknopf und Schülerstände mit aktueller Zuweisung; alte Vorbereitung unter „Weitere Optionen“.
+3. Implementiert: persönlicher und anonymer Einstieg. Persönliche Zuweisung verbindet den Live-Unterricht ohne zusätzlichen Codebeitritt. Temporäre Teilnahme bleibt ohne persönliche Synchronisation.
+4. Nachweise und Grenzen im [QA-Protokoll](UNIFIED-TEACHING-QA-20260907.md): vollständiger Text→Lehrer→Beamer-Durchlauf, Wiederaufnahme, parallele Tabs, schmaler Dialog sowie automatisierte Rechte-, Fehler- und Wiederholungstests. Der simultane Start aus zwei echten Browsern ist noch nicht separat nachgewiesen.
+5. Noch offen: gemeinsamer Produktivbuild mit Paketversionen und privatem API-Hook. Bei der erneuten Bestandsprüfung waren lokal und produktiv bereits Inhalt 1.11.1 / Cache v21 vorhanden. Diese parallele Inhaltsveröffentlichung stammt nicht aus dem Architekturumbau; vor dem Overlay erneut dateigenau vergleichen.
 
 ### Implementierter Stand
 
@@ -41,7 +41,7 @@ Mehrere Lehrkräfte oder Lerngruppen dürfen nicht auf denselben globalen Klasse
 
 `teaching-entry.js` liefert die Klassenwahl und Start-/Fortsetzen-Aktion. Die bisherige Raumvorbereitung ist unter „Weitere Optionen“ erreichbar. Schülerstände werden mit der aktuellen Zuweisung geöffnet; persönliche Links enthalten die Zuweisungskennung. Temporäre Links tragen `teilnahme=ohne-klasse`, sodass ein eventuell angemeldetes Schülerkonto nicht unbemerkt zur persönlichen Speicherung führt. Der Klassenbetrieb zeigt keinen zusätzlichen großen Raumcode und erzwingt keine Beitrittsfolie; QR/Link bleiben bei Bedarf verfügbar.
 
-Nachweise: 115 gemeinsame PHP-Prüfungen, 42 bestehende PHP-Prüfungen und sieben Adaptertests. Browser mit synthetischer Lehrkraft: Klasse starten/fortsetzen (derselbe Raum), Schülerübersicht mit genau einer Testperson, temporär starten/fortsetzen (derselbe zweite Raum), Rückkehr zur Klasse, persönliche und anonyme Linkvarianten. Helle und dunkle Darstellung visuell geprüft. Noch offen: schmaler Viewport, vollständiger Schüler→Mitschrift→Beamer-Durchlauf mit der neuen Startoberfläche, tatsächlicher Parallelklick von zwei Browsern, finaler Produktivbuild und Live-Abnahme.
+Nachweise: 121 gemeinsame PHP-Prüfungen, 42 bestehende PHP-Prüfungen, acht Adaptertests und drei Tests des echten Klassenraum-Speicher-APIs. Browserprüfung der vollständigen lokalen Ethik-Lehrer-, Schüler- und Beameransicht sowie eines 390-Pixel-Inhaltsfensters. Details und verbleibende Freigabeschritte stehen im QA-Protokoll. Die neue Paketkombination ist noch nicht produktiv aktiviert.
 
 ### Einbauvertrag für den nächsten Build
 
@@ -51,7 +51,7 @@ Nachweise: 115 gemeinsame PHP-Prüfungen, 42 bestehende PHP-Prüfungen und siebe
 - Vor Veröffentlichung Paketversionen und Manifest gemeinsam anheben (geplant: classroom 1.6.0, learning-sync 1.1.0, teacher-platform 2.1.0) sowie Cacheversion ändern. Der aktuelle Produktivstand ist weiterhin der im Freigabenachweis dokumentierte Stand.
 - Die lokale QA-Fixture `tests/serve-platform.php` bindet den Hook in eine temporäre Kopie der Modul-API ein und verändert weder Ethik-Quellen noch Produktionsdaten. `/qa/teaching/` lädt die neuen Pakete direkt; dieses Testverzeichnis wird nicht veröffentlicht.
 
-Der Startablauf schützt vor üblichen Wiederholungen. Ein harter Prozessabbruch zwischen physischer Raumerzeugung und dem Schreiben des Wiederholungsnachweises kann einen unzugeordneten Raum hinterlassen; er hat keine persönlichen Mitschriften und läuft regulär ab. Dafür wird kein bestehender Raum oder Arbeitsstand gelöscht. Vor dem Rollout ist der Fehlerpfad gezielt zu prüfen.
+Der Startablauf schützt vor üblichen Wiederholungen. Ein harter Prozessabbruch zwischen physischer Raumerzeugung und dem Schreiben des Wiederholungsnachweises kann einen unzugeordneten Raum hinterlassen; er hat keine persönlichen Mitschriften und läuft regulär ab. Ein injizierter Fehler nach physischer Erzeugung prüft nun Wiederaufnahme mit genau einer persönlichen Zuweisung und unverändertem früheren Lernstand. Ein tatsächliches SIGKILL-Szenario wurde damit nicht simuliert.
 
 ## Persönliche Anmeldung: noch offen
 
