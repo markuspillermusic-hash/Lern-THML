@@ -1,10 +1,23 @@
-# Gemeinsame Unterrichtsplattform 2.0.1
+# Gemeinsame Unterrichtsplattform 2.1.0
+
+2.1.0 ergänzt den geprüften Klassenlistenimport aus XLSX, XLSM, CSV, Text oder
+der Zwischenablage. Owner und Editor können Listen selbst importieren und dabei
+getrennt festlegen, ob neue Konten LernHTML, Prüfungsapp oder beide Angebote
+verwenden. Identitäten werden weiterhin niemals allein anhand gleicher Namen
+zusammengeführt. Eigene Klassen einer verbundenen Prüfungsapp können nun auch
+von normalen berechtigten Lehrkräften veröffentlicht werden.
 
 2.0.1 ergänzt die durch das aktuelle Passwort bestätigte Änderung des zentralen
 Anmeldenamens. Verknüpfte Lernstände, Klassen und Prüfungsdaten bleiben über die
 unveränderte Konto-ID erhalten.
 
-Neu: optionaler Schülerzugang, getrennte Produktfreigaben für LernHTML und Prüfungsapp, gemeinsame Klassen, OIDC, verschlüsselte persönliche Mitschriften und gezielte Beamerfreigaben. Die Migrationen 5 und 6 sind additiv. Bestehende Lehrerkonten behalten LernHTML-Zugriff; eine Prüfungsapp-Verknüpfung und die Übernahme echter Klassen erfolgen ausschließlich bewusst durch die Administration. Der Pilot ist Ethik 13.1.1. Andere LernHTMLs bleiben unverändert lokal, bis ihr Adapter und Lernstandsvertrag integriert wurden.
+Neu: optionaler Schülerzugang, getrennte Produktfreigaben für LernHTML und
+Prüfungsapp, gemeinsame Klassen, OIDC, verschlüsselte persönliche Mitschriften
+und gezielte Beamerfreigaben. Die Migrationen 5 und 6 sind additiv. Bestehende
+Lehrerkonten behalten LernHTML-Zugriff; Installationen verbindet weiterhin nur
+die Administration. Owner und Editor dürfen ihre eigenen bearbeitbaren Klassen
+nach geprüfter Vorschau übernehmen. Der Pilot ist Ethik 13.1.1. Andere LernHTMLs
+bleiben unverändert lokal, bis ihr Adapter und Lernstandsvertrag integriert wurden.
 
 Siehe [Umsetzungsplan](../../docs/UNIFIED-PLATFORM-PLAN.md), [Freigabenachweis](../../docs/UNIFIED-PLATFORM-RELEASE-20260907.md) und [Synchronisationsvertrag](../learning-sync-v1/README.md).
 
@@ -58,6 +71,13 @@ entfernt; zusätzlich gilt das von der Lehrkraft gewählte Ablaufdatum.
 - Laufzeitdaten: `/var/lib/teacher-platform/`
 - Konfiguration und Hauptschlüssel: `/etc/teacher-platform/`
 - tägliche, konsistente SQLite-Backups: `/var/backups/teacher-platform/`
+
+Produktivupdates werden aus einem aktuellen Checkout als root mit
+`deploy/update.sh` ausgeführt. Das Skript prüft PHP und die Plattformtests,
+erstellt vor jeder Änderung ein konsistentes Datenbank- und Dateibackup,
+migriert additiv und prüft danach den öffentlichen Laufzeitendpunkt. Für einen
+Schulserver lassen sich Ziel-, Webroot-, Konfigurations- und Backuppfad über die
+`TEACHER_PLATFORM_*`-Variablen des Skripts setzen.
 
 Die erste Administration wird nicht mit einem fest eingebauten Passwort
 angelegt. Solange noch kein Konto existiert, kann der Besitzer die Einrichtung

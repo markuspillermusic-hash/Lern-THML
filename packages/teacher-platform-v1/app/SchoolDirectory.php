@@ -137,6 +137,68 @@ final class SchoolDirectory
             'url'=>rtrim((string)Config::get('base_url'),'/').'/zugang/?'.http_build_query(['schule'=>$org->fetchColumn(),'u'=>$username])];
     }
 
+    public static function previewRoster(array $actor,string $classId,array $entries,array $products): array
+    {
+        $class=self::assertClass($actor,$classId,true);
+        if($class['status']!=='active') throw new \RuntimeException('Die Klasse ist archiviert.');
+        $identity=Identity::teacher((int)$actor['id']);
+        $products=array_values(array_unique(array_intersect($products,['learning','assessment'])));
+        if(!$products) throw new \InvalidArgumentException('Mindestens ein Angebot muss ausgewählt sein.');
+        foreach($products as $product) if(!Identity::allows($identity,$product,(int)$class['organisation_id'])) throw new \RuntimeException('Ein ausgewähltes Angebot ist für diese Lehrkraft nicht freigegeben.');
+        if(!$entries || count($entries)>100) throw new \InvalidArgumentException('Die Klassenliste muss 1 bis 100 Personen enthalten.');
+        $existing=[];
+        foreach(self::learners($actor,$classId) as $member) if($member['active']) $existing[(int)$member['roster_number']]=$member;
+        $numbers=[];$plan=[];$conflicts=[];$db=Database::connection();
+        foreach($entries as $entry) {
+            $number=(int)($entry['number'] ?? 0);$name=Security::clean((string)($entry['name'] ?? ''),120);
+            if($number<1 || $number>999 || $name==='' || isset($numbers[$number])) throw new \InvalidArgumentException('Namen und Listennummern müssen vorhanden und eindeutig sein.');
+            $numbers[$number]=true;$normalised=strtolower(preg_replace('/\s+/u',' ',trim($name)) ?? $name);
+            $member=$existing[$number] ?? null;
+            if($member) {
+                $known=strtolower(preg_replace('/\s+/u',' ',trim((string)$member['display_name'])) ?? (string)$member['display_name']);
+                if($known!==$normalised) {
+                    $conflicts[]='Listennummer '.$number.' ist bereits mit einer anderen Person belegt.';
+                    $plan[]=['number'=>$number,'name'=>$name,'username'=>(string)$member['username'],'subject'=>(string)$member['subject'],'action'=>'Konflikt'];
+                    continue;
+                }
+                $plan[]=['number'=>$number,'name'=>$name,'username'=>(string)$member['username'],'subject'=>(string)$member['subject'],'action'=>'vorhanden'];
+                continue;
+            }
+            $username=self::rosterUsername((string)$class['label'],$number);
+            $q=$db->prepare('SELECT 1 FROM platform_learners WHERE organisation_id=? AND username=? COLLATE NOCASE');$q->execute([(int)$class['organisation_id'],$username]);
+            if($q->fetchColumn()) $conflicts[]=$username.': Der automatisch erzeugte Anmeldename ist bereits vergeben.';
+            $plan[]=['number'=>$number,'name'=>$name,'username'=>$username,'subject'=>'','action'=>'neu anlegen'];
+        }
+        return ['class_id'=>$classId,'class_label'=>$class['label'],'products'=>$products,'learners'=>$plan,'conflicts'=>$conflicts];
+    }
+
+    public static function importRoster(array $actor,string $classId,array $entries,array $products): array
+    {
+        $db=Database::connection();$db->beginTransaction();$credentials=[];
+        try {
+            $plan=self::previewRoster($actor,$classId,$entries,$products);
+            if($plan['conflicts']) throw new \RuntimeException(implode(' ',$plan['conflicts']));
+            foreach($plan['learners'] as $person) {
+                if($person['action']==='neu anlegen') {
+                    $credentials[]=self::createLearner($actor,$classId,$person['name'],$person['username'],$person['number'],$plan['products']);
+                } else {
+                    foreach($plan['products'] as $product) $db->prepare('INSERT INTO platform_product_grants(subject,product,enabled,updated_by,updated_at) VALUES(?,?,1,?,?) ON CONFLICT(subject,product) DO UPDATE SET enabled=1,updated_by=excluded.updated_by,updated_at=excluded.updated_at')->execute([$person['subject'],$product,(int)$actor['id'],time()]);
+                }
+            }
+            $db->commit();
+        } catch(\Throwable $error) {$db->rollBack();throw $error;}
+        Audit::record((int)$actor['id'],'roster.imported','class',$classId,['count'=>count($plan['learners']),'created'=>count($credentials),'products'=>$plan['products']]);
+        return ['plan'=>$plan,'credentials'=>$credentials];
+    }
+
+    private static function rosterUsername(string $classLabel,int $number): string
+    {
+        $label=strtoupper(strtr($classLabel,['Ä'=>'AE','Ö'=>'OE','Ü'=>'UE','ß'=>'SS','ä'=>'AE','ö'=>'OE','ü'=>'UE']));
+        $label=preg_replace('/[^A-Z0-9]/','',$label) ?: 'KLASSE';
+        $label=substr($label,0,54);
+        return $label.str_pad((string)$number,2,'0',STR_PAD_LEFT);
+    }
+
     public static function resetLearner(array $actor, string $classId, string $subject): string
     {
         self::assertClass($actor,$classId,true);

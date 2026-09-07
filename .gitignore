@@ -11,7 +11,7 @@ test-results/
 *.log
 *.sqlite*
 *.key
-config.php
+/packages/teacher-platform-v1/config/config.php
 .env
 .env.*
 !.env.example

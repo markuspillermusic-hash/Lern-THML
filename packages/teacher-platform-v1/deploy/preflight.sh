@@ -8,6 +8,8 @@ php -v
 php -m | grep -qx 'pdo_sqlite'
 php -m | grep -qx 'sodium'
 php -m | grep -qx 'openssl'
+php -m | grep -qx 'zip'
+php -m | grep -qx 'SimpleXML'
 test -x /usr/sbin/sendmail
 test -f "$APP_SOURCE/app/bootstrap.php"
 test -f "$PUBLIC_ROOT/lehrer/index.php"
