@@ -66,6 +66,11 @@ $db->exec("INSERT INTO users(username,email,display_name,password_hash,role,stat
 $otherId = (int)$db->lastInsertId();
 $db->exec("INSERT INTO organisation_memberships(user_id,organisation_id,membership_role,is_default,created_at) VALUES($otherId,1,'teacher',1,$now)");
 $other = $db->query("SELECT * FROM users WHERE id=$otherId")->fetch();
+check(Auth::changeUsername($other, 'renamed.teacher', 'ValidPassword456') === 'renamed.teacher', 'teacher can change their login name with the current password');
+check((string)$db->query("SELECT username FROM users WHERE id=$otherId")->fetchColumn() === 'renamed.teacher', 'changed login name is stored on the same account');
+$duplicateUsernameBlocked = false;
+try { Auth::changeUsername($other, 'test', 'ValidPassword456'); } catch (RuntimeException) { $duplicateUsernameBlocked = true; }
+check($duplicateUsernameBlocked, 'an existing login name cannot be assigned to another account');
 
 $requestInsert = $db->prepare('INSERT INTO access_requests(name,email,school,subjects,bundesland,access_type,reason,status,ip_hash,created_at,updated_at) VALUES(?,?,?,?,?,?,?,"pending",?,?,?)');
 $requestInsert->execute(['Neue Lehrkraft','new@example.invalid','Testschule','Katholische Religionslehre','Bayern','own-school','Testanfrage mit ausreichend langem Begründungstext.',hash('sha256','ip'),$now,$now]);

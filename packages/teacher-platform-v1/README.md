@@ -1,4 +1,8 @@
-# Gemeinsame Unterrichtsplattform 2.0.0
+# Gemeinsame Unterrichtsplattform 2.0.1
+
+2.0.1 ergänzt die durch das aktuelle Passwort bestätigte Änderung des zentralen
+Anmeldenamens. Verknüpfte Lernstände, Klassen und Prüfungsdaten bleiben über die
+unveränderte Konto-ID erhalten.
 
 Neu: optionaler Schülerzugang, getrennte Produktfreigaben für LernHTML und Prüfungsapp, gemeinsame Klassen, OIDC, verschlüsselte persönliche Mitschriften und gezielte Beamerfreigaben. Die Migrationen 5 und 6 sind additiv. Bestehende Lehrerkonten behalten LernHTML-Zugriff; eine Prüfungsapp-Verknüpfung und die Übernahme echter Klassen erfolgen ausschließlich bewusst durch die Administration. Der Pilot ist Ethik 13.1.1. Andere LernHTMLs bleiben unverändert lokal, bis ihr Adapter und Lernstandsvertrag integriert wurden.
 

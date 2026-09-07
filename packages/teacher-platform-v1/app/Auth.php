@@ -224,6 +224,30 @@ final class Auth
         if (str_contains($password, "\0")) throw new \RuntimeException('Das Passwort enthält ein ungültiges Zeichen.');
     }
 
+    public static function changeUsername(array $user, string $username, string $password): string
+    {
+        if (!password_verify($password, (string)($user['password_hash'] ?? ''))) {
+            throw new \RuntimeException('Das bisherige Passwort stimmt nicht.');
+        }
+        $username = strtolower(Security::clean($username, 60));
+        self::validateUsername($username);
+        $db = Database::connection();
+        $duplicate = $db->prepare('SELECT 1 FROM users WHERE username=? AND id<>? LIMIT 1');
+        $duplicate->execute([$username, (int)$user['id']]);
+        if ($duplicate->fetchColumn()) throw new \RuntimeException('Dieser Benutzername ist bereits vergeben.');
+        try {
+            $statement = $db->prepare('UPDATE users SET username=?,updated_at=? WHERE id=?');
+            $statement->execute([$username, time(), (int)$user['id']]);
+        } catch (\PDOException $error) {
+            if ((string)$error->getCode() === '23000') {
+                throw new \RuntimeException('Dieser Benutzername ist bereits vergeben.');
+            }
+            throw $error;
+        }
+        Audit::record((int)$user['id'], 'auth.username_changed', 'user', (string)$user['id']);
+        return $username;
+    }
+
     private static function verifyLegacyPassword(string $password): bool
     {
         $file = (string)Config::get('legacy_auth_file');
@@ -243,9 +267,16 @@ final class Auth
     private static function validateNewAccount(string $displayName, string $username, string $email, string $password): void
     {
         if (strlen($displayName) < 2) throw new \RuntimeException('Bitte einen vollständigen Anzeigenamen eingeben.');
-        if (!preg_match('/^[a-z0-9][a-z0-9._-]{2,59}$/', $username)) throw new \RuntimeException('Der Benutzername braucht mindestens drei Zeichen und darf Buchstaben, Zahlen, Punkt, Unterstrich und Gedankenstrich enthalten.');
+        self::validateUsername($username);
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) throw new \RuntimeException('Bitte eine gültige E-Mail-Adresse eingeben.');
         self::validatePassword($password);
+    }
+
+    private static function validateUsername(string $username): void
+    {
+        if (!preg_match('/^[a-z0-9][a-z0-9._-]{2,59}$/', $username)) {
+            throw new \RuntimeException('Der Benutzername braucht mindestens drei Zeichen und darf Buchstaben, Zahlen, Punkt, Unterstrich und Bindestrich enthalten.');
+        }
     }
 
     private static function uniqueOrgSlug(string $name): string
