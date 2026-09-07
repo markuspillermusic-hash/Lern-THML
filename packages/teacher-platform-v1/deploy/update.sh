@@ -10,10 +10,12 @@ PHP_FPM_SERVICE=${TEACHER_PLATFORM_PHP_FPM_SERVICE:-php8.4-fpm}
 STAMP=$(date -u +%Y%m%d-%H%M%S)
 BACKUP="$BACKUP_ROOT/$STAMP"
 
-case "$TARGET:$PUBLIC_ROOT:$CONFIG_FILE:$BACKUP_ROOT" in
-  /*:/*:/*:/*) ;;
-  *) echo 'Nur absolute Deploymentpfade sind erlaubt.' >&2; exit 1 ;;
-esac
+for path in "$TARGET" "$PUBLIC_ROOT" "$CONFIG_FILE" "$BACKUP_ROOT"; do
+  case "$path" in
+    /*) ;;
+    *) echo 'Nur absolute Deploymentpfade sind erlaubt.' >&2; exit 1 ;;
+  esac
+done
 test "$TARGET" != / && test "$PUBLIC_ROOT" != / && test "$BACKUP_ROOT" != /
 test -f "$PACKAGE_DIR/app/bootstrap.php"
 test -f "$TARGET/app/bootstrap.php"
