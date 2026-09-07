@@ -20,6 +20,7 @@ def load_json(path: Path) -> Any:
 
 def find_schema(script: Path) -> Path | None:
     candidates = [
+        script.parents[3] / "schemas" / "module-manifest.schema.json",
         script.parent.parent / "schemas" / "module-manifest.schema.json",
         script.parent.parent / "assets" / "module-manifest.schema.json",
     ]
@@ -46,8 +47,8 @@ def manual_checks(data: Any, project_root: Path | None, built: bool) -> tuple[li
         if key not in data:
             errors.append(f"Pflichtfeld fehlt: {key}")
 
-    if data.get("schemaVersion") != "1.0.0":
-        errors.append("schemaVersion muss 1.0.0 sein.")
+    if data.get("schemaVersion") not in ("1.0.0", "1.1.0"):
+        errors.append("schemaVersion muss 1.0.0 oder 1.1.0 sein.")
 
     module_id = nested(data, "module", "id")
     module_slug = nested(data, "module", "slug")
@@ -123,8 +124,19 @@ def manual_checks(data: Any, project_root: Path | None, built: bool) -> tuple[li
         errors.append("Feedback-Aufgaben-IDs müssen eindeutig sein.")
 
     privacy = data.get("privacy") if isinstance(data.get("privacy"), dict) else {}
-    if privacy.get("localStudentWork") is not True or privacy.get("serverStoresStudentAnswers") is not False:
-        errors.append("Private Lerntexte müssen lokal bleiben und dürfen nicht serverseitig persistiert werden.")
+    if privacy.get("localStudentWork") is not True:
+        errors.append("Lokales und Offline-Arbeiten muss erhalten bleiben.")
+    if privacy.get("serverStoresStudentAnswers") is True:
+        personal = data.get("personalLearning", {})
+        expected_personal = {"enabled": True, "authentication": "shared-platform", "requiresClassAssignment": True,
+                             "anonymousRoomSeparated": True, "localOfflineWork": True,
+                             "teacherAccess": "assigned-classes", "projection": "explicit-selection"}
+        if data.get("schemaVersion") != "1.1.0" or any(personal.get(k) != v for k, v in expected_personal.items()):
+            errors.append("Persönliche Serverstände benötigen den vollständigen, klassenbezogenen 1.1-Synchronisationsvertrag.")
+        if not routes.get("learningWorkApi") or not versions.get("learningSync") or not personal.get("contract"):
+            errors.append("Persönliche Synchronisation benötigt API, Paketversion und privaten Feldvertrag.")
+    elif privacy.get("serverStoresStudentAnswers") is not False:
+        errors.append("privacy.serverStoresStudentAnswers muss ausdrücklich true oder false sein.")
     notice = privacy.get("noticeUrl")
     if not isinstance(notice, str) or not WEB_PATH.fullmatch(notice):
         errors.append("privacy.noticeUrl muss eine interne, dauerhaft erreichbare Route sein.")

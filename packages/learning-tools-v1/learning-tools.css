@@ -1,0 +1,211 @@
+:root {
+  --learning-gold: #efbf4f;
+  --learning-coral: #d97870;
+  --learning-teal: #55ad9f;
+  --learning-blue: #5794ba;
+  --learning-eraser: #7b8790;
+}
+::highlight(religion-gold) {
+  background: rgba(244, 190, 67, 0.55);
+  color: inherit;
+}
+::highlight(religion-coral) {
+  background: rgba(222, 113, 102, 0.42);
+  color: inherit;
+}
+::highlight(religion-teal) {
+  background: rgba(86, 190, 176, 0.42);
+  color: inherit;
+}
+::highlight(religion-blue) {
+  background: rgba(91, 166, 204, 0.42);
+  color: inherit;
+}
+.learning-highlight-toolbar,
+.learning-drawing-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  width: min(100%, 82ch);
+  margin: 0.75rem auto;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--card) 94%, var(--section-accent) 6%);
+  font: 700 0.78rem/1.35 var(--sans);
+}
+.learning-tool-label {
+  margin-right: 0.2rem;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.learning-color {
+  width: 1.75rem;
+  height: 1.75rem;
+  min-width: 1.75rem;
+  padding: 0;
+  border: 2px solid color-mix(in srgb, var(--line) 80%, transparent);
+  border-radius: 50%;
+  background: var(--learning-color, #d39b37);
+  box-shadow: none;
+  cursor: pointer;
+}
+.learning-color.is-gold {
+  --learning-color: var(--learning-gold);
+}
+.learning-color.is-coral {
+  --learning-color: var(--learning-coral);
+}
+.learning-color.is-teal {
+  --learning-color: var(--learning-teal);
+}
+.learning-color.is-blue {
+  --learning-color: var(--learning-blue);
+}
+.learning-color.active,
+.learning-color[aria-pressed="true"] {
+  outline: 3px solid color-mix(in srgb, var(--violet) 72%, white);
+  outline-offset: 2px;
+}
+.learning-tool-button {
+  min-height: 2rem;
+  padding: 0.35rem 0.62rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper2);
+  color: var(--ink);
+  font: 700 0.76rem/1.2 var(--sans);
+  cursor: pointer;
+}
+.learning-tool-button.active {
+  background: var(--violet);
+  color: white;
+  border-color: var(--violet);
+}
+.learning-eraser::before {
+  content: "⌫";
+  margin-right: 0.28rem;
+}
+.learning-eraser.active {
+  background: var(--learning-eraser);
+  border-color: var(--learning-eraser);
+}
+.learning-tool-status {
+  flex: 1 1 15rem;
+  margin: 0;
+  color: var(--muted);
+  font-weight: 500;
+}
+[data-learning-marker-active="true"] {
+  cursor: crosshair;
+  outline: 2px solid
+    color-mix(in srgb, var(--learning-active-marker) 65%, transparent);
+  outline-offset: 0.2rem;
+}
+[data-learning-marker-active="true"] * {
+  cursor: crosshair;
+}
+[data-learning-marker-mode="eraser"],
+[data-learning-marker-mode="eraser"] * {
+  cursor: not-allowed;
+}
+.learning-marker-stop {
+  position: fixed;
+  z-index: 9998;
+  inset-inline-end: 0.8rem;
+  bottom: 5.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.8rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid
+    color-mix(in srgb, var(--learning-active-marker) 70%, var(--line));
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  font: 800 0.78rem/1.2 var(--sans);
+  cursor: pointer;
+}
+.learning-marker-stop[hidden] {
+  display: none !important;
+}
+.learning-marker-stop-swatch {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: var(--learning-active-marker);
+  box-shadow:
+    0 0 0 2px var(--paper),
+    0 0 0 3px var(--line);
+}
+.human-figure-stage {
+  position: relative;
+  width: 132px;
+  min-height: 250px;
+  margin: 0 auto 0.35rem;
+}
+.human-figure-stage > svg {
+  position: absolute;
+  inset: 0;
+  width: 120px !important;
+  height: 250px;
+  margin: 0 6px !important;
+}
+.learning-drawing-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: block;
+  touch-action: none;
+  cursor: crosshair;
+  pointer-events: none;
+}
+.learning-drawing-canvas.is-active { pointer-events: auto; }
+[data-drawing-id] { position: relative; }
+.learning-drawing-tools {
+  width: 100%;
+  justify-content: space-between;
+  margin-top: -1.2rem;
+  margin-bottom: 1rem;
+}
+.learning-drawing-tools > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+.learning-drawing-tools label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.learning-drawing-tools select {
+  width: auto;
+  margin: 0;
+  padding: 0.35rem 0.55rem;
+}
+@media (max-width: 700px) {
+  .learning-highlight-toolbar,
+  .learning-drawing-tools {
+    align-items: flex-start;
+  }
+  .learning-tool-status {
+    flex-basis: 100%;
+  }
+  .learning-marker-stop {
+    inset-inline-end: 0.5rem;
+    bottom: 4.75rem;
+  }
+}
+@media print {
+  .learning-highlight-toolbar,
+  .learning-marker-stop,
+  .learning-drawing-tools,
+  .learning-drawing-canvas {
+    display: none !important;
+  }
+}

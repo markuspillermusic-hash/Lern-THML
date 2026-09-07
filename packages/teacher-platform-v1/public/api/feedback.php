@@ -1,8 +1,7 @@
 <?php
 declare(strict_types=1);
 
-$bootstrap = getenv('TEACHER_PLATFORM_BOOTSTRAP') ?: '/srv/teacher-platform-v1/app/bootstrap.php';
-require_once $bootstrap;
+require_once '/websites/_protected/teacher-platform-v1/app/bootstrap.php';
 
 use ReligionPlatform\FeedbackGateway;
 use ReligionPlatform\Security;

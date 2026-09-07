@@ -9,6 +9,7 @@ final class Rooms
 {
     public static function mirror(string $code, string $moduleSlug, array $owner, array $state): void
     {
+        Identity::requireLearningTeacher($owner);
         $code = strtoupper(Security::clean($code, 6));
         if (!preg_match('/^[A-Z2-9]{6}$/', $code) || (int)($owner['id'] ?? 0) < 1) {
             throw new \InvalidArgumentException('Raum oder Besitzer ist ungültig.');
@@ -49,6 +50,7 @@ SQL);
 
     public static function listForUser(array $user): array
     {
+        if (!Identity::allows(Identity::teacher((int)$user['id']), 'learning')) return [];
         $params = [time()];
         $where = 'r.ended_at IS NULL AND r.expires_at>?';
         if (!Auth::isAdmin($user)) {
@@ -62,6 +64,7 @@ SQL);
 
     public static function assertOwner(array $room, array $user): void
     {
+        Identity::requireLearningTeacher($user);
         if ((int)$room['owner_user_id'] !== (int)$user['id'] && !Auth::isAdmin($user)) {
             throw new \RuntimeException('Dieser Raum gehört zu einer anderen Lehrkraft.');
         }
@@ -72,8 +75,8 @@ SQL);
         $room = self::find($code);
         if (!$room) throw new \RuntimeException('Der Raum ist nicht aktiv.');
         self::assertOwner($room, $user);
-        if ($enabled && !Vault::resolveOpenAiKey($user, (int)($room['organisation_id'] ?? 0))) {
-            throw new \RuntimeException('Es ist weder ein persönlicher noch ein schulischer API-Schlüssel hinterlegt.');
+        if ($enabled && !Vault::resolveOpenAiKey($user, (int)($room['organisation_id'] ?? 0), (string)$room['module_slug'])) {
+            throw new \RuntimeException('Es ist kein persönlicher, schulischer oder freigegebener API-Zugang verfügbar.');
         }
         $statement = Database::connection()->prepare('UPDATE rooms SET ai_feedback_enabled=?, updated_at=? WHERE code=?');
         $statement->execute([$enabled ? 1 : 0, time(), strtoupper($code)]);

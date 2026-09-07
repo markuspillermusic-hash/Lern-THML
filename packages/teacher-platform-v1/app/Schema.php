@@ -17,6 +17,11 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
 SQL);
         $version = (int)$db->query('SELECT COALESCE(MAX(version), 0) FROM schema_migrations')->fetchColumn();
         if ($version < 1) self::versionOne($db);
+        if ($version < 2) self::versionTwo($db);
+        if ($version < 3) self::versionThree($db);
+        if ($version < 4) self::versionFour($db);
+        if ($version < 5) PlatformSchema::migrate($db);
+        if ($version < 6) LearningSchema::migrate($db);
     }
 
     private static function versionOne(PDO $db): void
@@ -188,5 +193,192 @@ SQL);
             throw $error;
         }
     }
-}
 
+    private static function versionTwo(PDO $db): void
+    {
+        $db->beginTransaction();
+        try {
+            $db->exec(<<<'SQL'
+ALTER TABLE access_requests ADD COLUMN decided_at INTEGER;
+ALTER TABLE access_requests ADD COLUMN decided_by INTEGER REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE access_requests ADD COLUMN invitation_id INTEGER REFERENCES invitations(id) ON DELETE SET NULL;
+ALTER TABLE access_requests ADD COLUMN registered_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE access_requests ADD COLUMN registered_at INTEGER;
+ALTER TABLE access_requests ADD COLUMN notification_sent_at INTEGER;
+ALTER TABLE access_requests ADD COLUMN notification_last_error TEXT NOT NULL DEFAULT '';
+
+ALTER TABLE invitations ADD COLUMN access_request_id INTEGER REFERENCES access_requests(id) ON DELETE SET NULL;
+ALTER TABLE invitations ADD COLUMN email_sent_at INTEGER;
+ALTER TABLE invitations ADD COLUMN email_attempts INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE invitations ADD COLUMN email_last_error TEXT NOT NULL DEFAULT '';
+ALTER TABLE invitations ADD COLUMN revoked_at INTEGER;
+
+CREATE INDEX idx_access_requests_invitation ON access_requests(invitation_id);
+CREATE INDEX idx_access_requests_registered ON access_requests(registered_user_id);
+CREATE INDEX idx_invitations_request ON invitations(access_request_id, created_at DESC);
+SQL);
+
+            // Bestehende Genehmigungen soweit möglich wieder mit ihrer Einladung
+            // und einem bereits angelegten Konto verknüpfen.
+            $db->exec(<<<'SQL'
+UPDATE access_requests
+SET invitation_id = (
+  SELECT i.id FROM invitations i
+  WHERE lower(i.email) = lower(access_requests.email)
+    AND i.created_at >= access_requests.updated_at - 300
+  ORDER BY i.created_at DESC LIMIT 1
+)
+WHERE status = 'approved' AND invitation_id IS NULL;
+
+UPDATE invitations
+SET access_request_id = (
+  SELECT ar.id FROM access_requests ar
+  WHERE ar.invitation_id = invitations.id
+  LIMIT 1
+)
+WHERE access_request_id IS NULL;
+
+UPDATE access_requests
+SET registered_user_id = (
+      SELECT u.id FROM users u WHERE lower(u.email) = lower(access_requests.email) LIMIT 1
+    ),
+    registered_at = COALESCE((
+      SELECT i.used_at FROM invitations i WHERE i.id = access_requests.invitation_id
+    ), updated_at)
+WHERE status = 'approved'
+  AND registered_user_id IS NULL
+  AND EXISTS (SELECT 1 FROM users u WHERE lower(u.email) = lower(access_requests.email));
+SQL);
+
+            $statement = $db->prepare('INSERT INTO schema_migrations(version, applied_at) VALUES(2, ?)');
+            $statement->execute([time()]);
+            $db->commit();
+        } catch (\Throwable $error) {
+            $db->rollBack();
+            throw $error;
+        }
+    }
+
+    private static function versionThree(PDO $db): void
+    {
+        $db->beginTransaction();
+        try {
+            $db->exec(<<<'SQL'
+ALTER TABLE users ADD COLUMN email_verified_at INTEGER;
+ALTER TABLE users ADD COLUMN mfa_enabled_at INTEGER;
+
+CREATE TABLE password_reset_tokens (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token_hash TEXT NOT NULL UNIQUE,
+  requested_ip_hash TEXT NOT NULL,
+  expires_at INTEGER NOT NULL,
+  used_at INTEGER,
+  revoked_at INTEGER,
+  created_at INTEGER NOT NULL
+);
+
+CREATE INDEX idx_password_reset_user ON password_reset_tokens(user_id, created_at DESC);
+CREATE INDEX idx_password_reset_expiry ON password_reset_tokens(expires_at);
+
+CREATE TABLE support_tickets (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  public_id TEXT NOT NULL UNIQUE,
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  email TEXT NOT NULL COLLATE NOCASE,
+  category TEXT NOT NULL CHECK(category IN ('login','room','presentation','ai','content','privacy','security','other')),
+  subject TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'open' CHECK(status IN ('open','in_progress','waiting_user','resolved','closed')),
+  priority TEXT NOT NULL DEFAULT 'normal' CHECK(priority IN ('normal','high','urgent')),
+  assigned_to INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  ip_hash TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  closed_at INTEGER
+);
+
+CREATE INDEX idx_support_status ON support_tickets(status, updated_at DESC);
+CREATE INDEX idx_support_user ON support_tickets(user_id, updated_at DESC);
+
+CREATE TABLE support_messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ticket_id INTEGER NOT NULL REFERENCES support_tickets(id) ON DELETE CASCADE,
+  author_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  author_role TEXT NOT NULL CHECK(author_role IN ('visitor','teacher','admin','system')),
+  body TEXT NOT NULL,
+  is_internal INTEGER NOT NULL DEFAULT 0 CHECK(is_internal IN (0,1)),
+  created_at INTEGER NOT NULL
+);
+
+CREATE INDEX idx_support_messages_ticket ON support_messages(ticket_id, created_at ASC);
+
+CREATE TABLE ai_grants (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  label TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','revoked')),
+  starts_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL,
+  request_limit INTEGER NOT NULL DEFAULT 30,
+  token_limit INTEGER NOT NULL DEFAULT 60000,
+  used_requests INTEGER NOT NULL DEFAULT 0,
+  used_tokens INTEGER NOT NULL DEFAULT 0,
+  allowed_modules_json TEXT NOT NULL DEFAULT '[]',
+  created_by INTEGER NOT NULL REFERENCES users(id),
+  revoked_at INTEGER,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE INDEX idx_ai_grants_user ON ai_grants(user_id, status, expires_at DESC);
+
+ALTER TABLE feedback_usage ADD COLUMN grant_id INTEGER REFERENCES ai_grants(id) ON DELETE SET NULL;
+
+UPDATE users
+SET email_verified_at = COALESCE(email_verified_at, created_at)
+WHERE email_verified_at IS NULL;
+
+-- Konten, die sich ausdrücklich als extern oder institutionell registriert
+-- haben, dürfen keine aus der alten Genehmigungslogik geerbte
+-- Schulmitgliedschaft behalten.
+DELETE FROM organisation_memberships
+WHERE user_id IN (
+  SELECT registered_user_id
+  FROM access_requests
+  WHERE access_type IN ('external','institution')
+    AND registered_user_id IS NOT NULL
+);
+SQL);
+
+            $statement = $db->prepare('INSERT INTO schema_migrations(version, applied_at) VALUES(3, ?)');
+            $statement->execute([time()]);
+            $db->commit();
+        } catch (\Throwable $error) {
+            $db->rollBack();
+            throw $error;
+        }
+    }
+
+    private static function versionFour(PDO $db): void
+    {
+        $db->beginTransaction();
+        try {
+            $db->exec(<<<'SQL'
+ALTER TABLE access_requests ADD COLUMN platform_updates_opt_in INTEGER NOT NULL DEFAULT 0 CHECK(platform_updates_opt_in IN (0,1));
+ALTER TABLE access_requests ADD COLUMN platform_updates_opted_at INTEGER;
+ALTER TABLE access_requests ADD COLUMN platform_updates_withdrawn_at INTEGER;
+
+ALTER TABLE users ADD COLUMN platform_updates_opt_in INTEGER NOT NULL DEFAULT 0 CHECK(platform_updates_opt_in IN (0,1));
+ALTER TABLE users ADD COLUMN platform_updates_opted_at INTEGER;
+ALTER TABLE users ADD COLUMN platform_updates_withdrawn_at INTEGER;
+SQL);
+
+            $statement = $db->prepare('INSERT INTO schema_migrations(version, applied_at) VALUES(4, ?)');
+            $statement->execute([time()]);
+            $db->commit();
+        } catch (\Throwable $error) {
+            $db->rollBack();
+            throw $error;
+        }
+    }
+}

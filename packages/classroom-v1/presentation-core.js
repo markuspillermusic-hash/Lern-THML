@@ -18,10 +18,13 @@
   var activeEnvelope = null;
   var lastSignature = "";
   var lastAppliedSentAt = 0;
+  var lastAppliedMediaSignature = "";
+  var lastAppliedYoutubeSignature = "";
   var beamerWindow = null;
   var broadcast = null;
   var joinScreen = null;
   var shade = null;
+  var beamerDimmed = false;
   var teacherToolbar = null;
   var teacherCueIndex = -1;
   var teacherDimmed = false;
@@ -35,7 +38,7 @@
   var teacherImageOpen = false;
   var teacherManagerActive = false;
   var persistentQueue = Promise.resolve();
-  var presenterState = { theme: "light", focus: "", progress: 0, mode: "content", join: null, details: {}, controls: {}, media: null, youtube: null, image: null };
+  var presenterState = { theme: "light", focus: "", progress: 0, mode: "content", join: null, details: {}, controls: {}, learningHighlights: {}, media: null, youtube: null, image: null };
   var headerToggle = null;
   var beamerScrollFrame = 0;
   var beamerScrollGoal = null;
@@ -74,11 +77,11 @@
       if (presenterState.image && presenterState.image.target !== nextFocus) presenterState.image = { action: "close" };
       presenterState.focus = nextFocus;
       presenterState.progress = command.type === "follow" ? Math.max(0, Math.min(1, Number(payload.progress) || 0)) : 0;
-      presenterState.mode = "content";
+      if (presenterState.mode !== "dim") presenterState.mode = "content";
     } else if (payload.focus) {
       presenterState.focus = String(payload.focus);
       presenterState.progress = 0;
-      presenterState.mode = "content";
+      if (presenterState.mode !== "dim") presenterState.mode = "content";
     }
     if (command.type === "join") { presenterState.mode = "join"; presenterState.join = payload; }
     if (command.type === "dim") presenterState.mode = payload.active === false ? "content" : "dim";
@@ -98,6 +101,7 @@
         action: String(payload.action || "play"),
         videoId: String(payload.videoId || ""),
         start: Math.max(0, Number(payload.start || 0)),
+        end: Math.max(0, Number(payload.end || 0)),
         title: String(payload.title || "Video")
       };
       presenterState.media = null;
@@ -112,6 +116,12 @@
         caption: String(payload.caption || "")
       };
       if (presenterState.image.target) presenterState.focus = presenterState.image.target;
+    }
+    if (command.type === "learning-highlights" && payload.highlights && typeof payload.highlights === "object") {
+      presenterState.learningHighlights = JSON.parse(JSON.stringify(payload.highlights));
+    }
+    if (command.type === "control" && payload.group) {
+      presenterState.controls[String(payload.group)] = String(payload.value == null ? "" : payload.value);
     }
   }
 
@@ -130,6 +140,7 @@
       join: presenterState.mode === "join" ? presenterState.join : null,
       details: details,
       controls: controls,
+      learningHighlights: presenterState.learningHighlights,
       media: presenterState.media,
       youtube: presenterState.youtube,
       image: presenterState.image
@@ -307,18 +318,31 @@
     var escapedGroup = window.CSS && CSS.escape ? CSS.escape(cleanGroup) : cleanGroup.replace(/[^a-zA-Z0-9_-]/g, "");
     var escapedValue = window.CSS && CSS.escape ? CSS.escape(cleanValue) : cleanValue.replace(/[^a-zA-Z0-9_-]/g, "");
     var control = document.querySelector('[data-classroom-control-group="' + escapedGroup + '"][data-classroom-control-value="' + escapedValue + '"]');
-    if (!control) return;
+    if (!control) {
+      var range = document.querySelector('[data-classroom-range-group="' + escapedGroup + '"]');
+      if (!range) return;
+      if (String(range.value) !== cleanValue) {
+        range.value = cleanValue;
+        range.dispatchEvent(new Event("input", { bubbles: true }));
+        range.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+      return;
+    }
     var alreadyActive = control.classList.contains("active") || control.getAttribute("aria-selected") === "true" || control.getAttribute("aria-pressed") === "true";
     if (!alreadyActive) control.click();
   }
 
-  function applyPresenterSnapshot(snapshot, skipFocus) {
+  function applyPresenterSnapshot(snapshot, skipFocus, skipMedia) {
     if (!snapshot || typeof snapshot !== "object") return;
     if (snapshot.theme) document.documentElement.dataset.theme = snapshot.theme === "dark" ? "dark" : "light";
+    if (snapshot.mode) beamerDimmed = snapshot.mode === "dim";
     applyDetailsState(snapshot.details);
     if (snapshot.controls && typeof snapshot.controls === "object") Object.keys(snapshot.controls).forEach(function (group) { applyControlState(group, snapshot.controls[group]); });
-    if (snapshot.media && snapshot.media.target) applyMedia(snapshot.media);
-    if (snapshot.youtube && snapshot.youtube.target) applyYoutube(snapshot.youtube);
+    if (snapshot.learningHighlights && typeof snapshot.learningHighlights === "object") {
+      try { document.dispatchEvent(new CustomEvent("religion-classroom-learning-highlights", { detail: { highlights: snapshot.learningHighlights } })); } catch (error) {}
+    }
+    if (!skipMedia && snapshot.media && snapshot.media.target) applyMedia(snapshot.media, false);
+    if (!skipMedia && snapshot.youtube && snapshot.youtube.target) applyYoutube(snapshot.youtube, false);
     if (snapshot.image && snapshot.image.action) applyImage(snapshot.image);
     if (snapshot.mode === "join" && snapshot.join) renderJoin(snapshot.join);
     else if (snapshot.mode === "dim") showShade("Arbeitsphase", "Der nächste Inhalt wird erst auf Signal der Lehrkraft sichtbar.");
@@ -358,7 +382,7 @@
     document.body.classList.toggle("classroom-stage-outside-main", Boolean(main && !main.contains(section)));
     document.body.classList.remove("classroom-beamer-awaiting");
     document.body.classList.add("classroom-beamer-active");
-    hideShade();
+    if (!beamerDimmed) hideShade();
     if (joinScreen) joinScreen.hidden = true;
   }
 
@@ -489,9 +513,16 @@
     return target && target.querySelector ? target.querySelector("audio,video") : null;
   }
 
-  function applyMedia(payload) {
+  function mediaSignature(payload) {
+    return [String(payload.target || payload.key || ""), String(payload.action || "play"), Math.max(0, Number(payload.time || 0))].join("|");
+  }
+
+  function applyMedia(payload, force) {
     var media = mediaTarget(payload);
     if (!media) return;
+    var nextMediaSignature = mediaSignature(payload);
+    if (!force && nextMediaSignature === lastAppliedMediaSignature) return;
+    lastAppliedMediaSignature = nextMediaSignature;
     isolate(media);
     var action = String(payload.action || "play");
     if (Number.isFinite(Number(payload.time))) {
@@ -513,9 +544,25 @@
     return target;
   }
 
-  function applyYoutube(payload) {
+  function youtubeSignature(payload) {
+    return [String(payload.target || payload.key || ""), String(payload.action || "play"), String(payload.videoId || ""), Math.max(0, Number(payload.start || 0)), Math.max(0, Number(payload.end || 0))].join("|");
+  }
+
+  function youtubeStart(box) {
+    return Math.max(0, Number(box && (box.dataset.youtubeStart || box.dataset.start) || 0));
+  }
+
+  function youtubeEnd(box, start) {
+    var end = Math.max(0, Number(box && (box.dataset.youtubeEnd || box.dataset.end) || 0));
+    return end > start ? end : 0;
+  }
+
+  function applyYoutube(payload, force) {
     var target = youtubeTarget(payload);
     if (!target) return;
+    var nextYoutubeSignature = youtubeSignature(payload);
+    if (!force && nextYoutubeSignature === lastAppliedYoutubeSignature) return;
+    lastAppliedYoutubeSignature = nextYoutubeSignature;
     isolate(target);
     focusTarget(targetKey(target));
     var box = target.matches("[data-youtube-id],[data-youtube]") ? target : target.querySelector("[data-youtube-id],[data-youtube]");
@@ -523,6 +570,10 @@
     var id = String(payload.videoId || box.dataset.youtubeId || box.dataset.youtube || "").replace(/[^A-Za-z0-9_-]/g, "");
     if (!id) return;
     var iframe = box.querySelector("iframe");
+    var action = String(payload.action || "play");
+    /* Ein wiederhergestellter Pause-/Stoppzustand darf keinen neuen Autoplay-
+       Frame erzeugen. Erst ein ausdrücklicher Play-Befehl lädt das Medium. */
+    if (!iframe && action !== "play") return;
     if (!iframe) {
       iframe = document.createElement("iframe");
       iframe.title = payload.title || box.dataset.youtubeTitle || box.dataset.title || "Video";
@@ -530,12 +581,13 @@
       iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
       iframe.allowFullscreen = true;
       iframe.referrerPolicy = "strict-origin-when-cross-origin";
-      var start = Math.max(0, Number(payload.start || box.dataset.start || 0));
-      iframe.src = "https://www.youtube-nocookie.com/embed/" + encodeURIComponent(id) + "?rel=0&playsinline=1&enablejsapi=1&autoplay=1" + (start ? "&start=" + Math.floor(start) : "");
+      var start = Math.max(0, Number(payload.start || youtubeStart(box)));
+      var end = Math.max(0, Number(payload.end || youtubeEnd(box, start)));
+      iframe.src = "https://www.youtube-nocookie.com/embed/" + encodeURIComponent(id) + "?rel=0&playsinline=1&enablejsapi=1&autoplay=1" + (start ? "&start=" + Math.floor(start) : "") + (end > start ? "&end=" + Math.floor(end) : "");
       box.replaceChildren(iframe);
       box.classList.add("is-loaded");
     } else {
-      try { iframe.contentWindow.postMessage(JSON.stringify({ event: "command", func: payload.action === "pause" ? "pauseVideo" : payload.action === "stop" ? "stopVideo" : "playVideo", args: [] }), "*"); } catch (error) {}
+      try { iframe.contentWindow.postMessage(JSON.stringify({ event: "command", func: action === "pause" ? "pauseVideo" : action === "stop" ? "stopVideo" : "playVideo", args: [] }), "*"); } catch (error) {}
     }
   }
 
@@ -584,14 +636,17 @@
     if (sentAt) lastAppliedSentAt = Math.max(lastAppliedSentAt, sentAt);
     activeEnvelope = command;
     var payload = command.payload || {};
-    applyPresenterSnapshot(payload._classroom, command.type === "goto" || command.type === "follow");
+    applyPresenterSnapshot(payload._classroom, command.type === "goto" || command.type === "follow", command.type === "media" || command.type === "youtube");
     if (command.type === "goto") focusTarget(payload.step || payload.target || payload.key);
     if (command.type === "follow") applyFollow(payload);
     if (command.type === "join") renderJoin(payload);
     if (command.type === "theme") document.documentElement.dataset.theme = payload.theme === "dark" ? "dark" : "light";
-    if (command.type === "dim") payload.active === false ? hideShade() : showShade(payload.title || "Arbeitsphase", payload.message || "Der Beamer ist vorübergehend abgedunkelt.");
-    if (command.type === "media") applyMedia(payload);
-    if (command.type === "youtube") applyYoutube(payload);
+    if (command.type === "dim") {
+      beamerDimmed = payload.active !== false;
+      beamerDimmed ? showShade(payload.title || "Arbeitsphase", payload.message || "Der Beamer ist vorübergehend abgedunkelt.") : hideShade();
+    }
+    if (command.type === "media") applyMedia(payload, true);
+    if (command.type === "youtube") applyYoutube(payload, true);
     if (command.type === "image") applyImage(payload);
     if (command.type === "stepper") { var stepTarget=targetFor(payload.target||payload.key);if(stepTarget)isolate(stepTarget); }
     if (command.type === "details") { var detail=detailForKey(payload.target||payload.key);if(detail)detail.open=Boolean(payload.open);if(payload.focus)focusTarget(payload.focus); }
@@ -621,7 +676,7 @@
       url: data && data.url || classroom.studentUrl()
     };
     if (view === "beamer") { renderJoin(payload); return Promise.resolve(); }
-    openBeamer();
+    if (!data || data.openBeamer !== false) openBeamer();
     return new Promise(function (resolve) { setTimeout(function () { send({ type: "join", payload: payload }).then(resolve); }, 280); });
   }
 
@@ -798,7 +853,11 @@
     if (!box) { updateToolbarStatus("Kein Audio oder Video am aktuellen Präsentationshalt.", true); return; }
     var target = box.closest(allCueSelector) || box;
     var key = targetKey(target);
-    if (key) { send({ type: "youtube", payload: { target: key, action: action, videoId: box.dataset.youtubeId || box.dataset.youtube || "", start: Number(box.dataset.start || 0), title: box.dataset.youtubeTitle || box.dataset.title || "Video" } }); updateToolbarStatus(action === "pause" ? "Video am Beamer pausiert." : "Video an den Beamer gesendet."); }
+    if (key) {
+      var start = youtubeStart(box);
+      send({ type: "youtube", payload: { target: key, action: action, videoId: box.dataset.youtubeId || box.dataset.youtube || "", start: start, end: youtubeEnd(box, start), title: box.dataset.youtubeTitle || box.dataset.title || "Video" } });
+      updateToolbarStatus(action === "pause" ? "Video am Beamer pausiert." : "Video an den Beamer gesendet.");
+    }
   }
 
   function updateToolbarStatus(message, error) {
@@ -993,6 +1052,17 @@
       send({ type: "control", payload: { group: group, value: value, focus: targetKey(cue) } });
     }, true);
 
+    document.addEventListener("input", function (event) {
+      var range = event.target && event.target.closest && event.target.closest("[data-classroom-range-group]");
+      if (!range || isExcludedFlowNode(range)) return;
+      var group = String(range.dataset.classroomRangeGroup || "");
+      if (!group) return;
+      var value = String(range.value == null ? "" : range.value);
+      presenterState.controls[group] = value;
+      var cue = range.closest(allCueSelector) || range.closest(sectionSelector);
+      send({ type: "control", payload: { group: group, value: value, focus: targetKey(cue) } });
+    }, true);
+
     if (!options.adapterOwnsMedia) {
       document.addEventListener("play", function (event) {
         if (!event.target.matches || !event.target.matches("audio,video")) return;
@@ -1043,8 +1113,20 @@
         if (key) {
           event.preventDefault();
           event.stopPropagation();
-          send({ type: "youtube", payload: { target: key, action: "play", videoId: box.dataset.youtubeId || box.dataset.youtube || "", start: Number(box.dataset.start || 0), title: box.dataset.youtubeTitle || box.dataset.title || "Video" } });
-          updateToolbarStatus("Video an den Beamer gesendet.");
+          var start = youtubeStart(box);
+          var state = classroom.state && classroom.state();
+          var beamerConnected = Boolean(state && Number(state.beamerHeartbeatAt || 0) > 0 && Date.now() / 1000 - Number(state.beamerHeartbeatAt) < 14);
+          var originalLabel = button.dataset.youtubeOriginalLabel || button.textContent;
+          button.dataset.youtubeOriginalLabel = originalLabel;
+          send({ type: "youtube", payload: { target: key, action: "play", videoId: box.dataset.youtubeId || box.dataset.youtube || "", start: start, end: youtubeEnd(box, start), title: box.dataset.youtubeTitle || box.dataset.title || "Video" } });
+          button.textContent = beamerConnected ? "Am Beamer gestartet" : "Gesendet · Beamer nicht verbunden";
+          button.setAttribute("aria-live", "polite");
+          updateToolbarStatus(beamerConnected ? "Video am Beamer gestartet." : "Video gesendet; der Beamer ist derzeit nicht verbunden.", !beamerConnected);
+          window.setTimeout(function () {
+            if (!document.contains(button)) return;
+            button.textContent = originalLabel;
+            button.removeAttribute("aria-live");
+          }, 3200);
         }
       }, true);
     }
@@ -1097,6 +1179,12 @@
       var data = event.detail && event.detail.data;
       if (data && data.presentation) receive(data.presentation);
     });
+    document.addEventListener("religion-course-material-ready", function () {
+      if (!activeEnvelope) return;
+      var payload = activeEnvelope.payload || {};
+      var pending = activeEnvelope.type === "youtube" ? payload : payload._classroom && payload._classroom.youtube;
+      if (pending && pending.target) applyYoutube(pending, true);
+    });
     function heartbeat() {
       if (!roomCode()) return;
       classroom.request("beamer_heartbeat", { room: roomCode() }).catch(function () {});
@@ -1106,7 +1194,7 @@
   }
 
   window.RELIGION_PRESENTATION = {
-    version: "1.2.4",
+    version: "1.2.8",
     send: send,
     goto: function (key) { return send({ type: "goto", payload: { step: key } }); },
     join: showJoin,

@@ -12,25 +12,28 @@ final class Auth
         return (int)Database::connection()->query('SELECT COUNT(*) FROM users')->fetchColumn();
     }
 
-    public static function currentUser(): ?array
+    // Existing lesson adapters use this method without an argument: they retain
+    // a learning-specific contract. Only shared account pages pass null.
+    public static function currentUser(?string $product = 'learning'): ?array
     {
         Security::startSession();
         $userId = (int)($_SESSION['platform_user_id'] ?? 0);
         $authVersion = (string)($_SESSION['platform_auth_version'] ?? '');
         if ($userId < 1 || $authVersion === '') return null;
-        $statement = Database::connection()->prepare('SELECT * FROM users WHERE id=? AND status="active"');
+        $statement = Database::connection()->prepare('SELECT u.* FROM users u LEFT JOIN platform_principals p ON p.teacher_user_id=u.id WHERE u.id=? AND u.status="active" AND (p.subject IS NULL OR p.status="active")');
         $statement->execute([$userId]);
         $user = $statement->fetch(PDO::FETCH_ASSOC);
         if (!is_array($user) || !hash_equals((string)$user['auth_version'], $authVersion)) {
             self::logout();
             return null;
         }
+        if ($product !== null && !Identity::allows(Identity::teacher((int)$user['id']), $product)) return null;
         return $user;
     }
 
-    public static function requireUser(): array
+    public static function requireUser(?string $product = 'learning'): array
     {
-        $user = self::currentUser();
+        $user = self::currentUser($product);
         if (!$user) {
             $next = rawurlencode((string)($_SERVER['REQUEST_URI'] ?? '/lehrer/'));
             header('Location: /lehrer/?next=' . $next);
@@ -49,9 +52,9 @@ final class Auth
         return $user;
     }
 
-    public static function login(string $identity, string $password): array
+    public static function login(string $identity, string $password, string $mfaCode = ''): array
     {
-        $identity = Security::clean($identity, 190);
+        $identity = strtolower(Security::clean($identity, 190));
         $subject = Security::clientIpHash('login|' . strtolower($identity));
         $allowed = Security::rateLimit(
             'login',
@@ -60,17 +63,32 @@ final class Auth
             (int)Config::get('login_max_attempts', 7)
         );
         if (!$allowed) throw new \RuntimeException('Zu viele Anmeldeversuche. Bitte später erneut versuchen.');
-        $statement = Database::connection()->prepare('SELECT * FROM users WHERE (username=? OR email=?) LIMIT 1');
+        $accountSubject = hash_hmac('sha256', 'login-account|' . $identity, Vault::masterKey());
+        if (!Security::rateLimit('login-account', $accountSubject, 900, 14)) {
+            throw new \RuntimeException('Für dieses Konto gab es zu viele Anmeldeversuche. Bitte später erneut versuchen oder das Passwort zurücksetzen.');
+        }
+        $statement = Database::connection()->prepare('SELECT u.* FROM users u LEFT JOIN platform_principals p ON p.teacher_user_id=u.id WHERE (u.username=? OR u.email=?) AND (p.subject IS NULL OR p.status="active") LIMIT 1');
         $statement->execute([$identity, $identity]);
         $user = $statement->fetch(PDO::FETCH_ASSOC);
         if (!is_array($user) || ($user['status'] ?? '') !== 'active' || !password_verify($password, (string)$user['password_hash'])) {
             throw new \RuntimeException('Benutzername/E-Mail oder Passwort stimmt nicht.');
         }
+        if (!empty($user['mfa_enabled_at']) && !Mfa::verifyForUser($user, $mfaCode)) {
+            throw new \RuntimeException('Der zusätzliche Bestätigungscode oder Wiederherstellungscode fehlt oder stimmt nicht.');
+        }
+        if (password_needs_rehash((string)$user['password_hash'], PASSWORD_ARGON2ID)) {
+            $rehash = Database::connection()->prepare('UPDATE users SET password_hash=?,updated_at=? WHERE id=?');
+            $rehash->execute([password_hash($password, PASSWORD_ARGON2ID), time(), (int)$user['id']]);
+        }
         Security::startSession();
+        Oidc::revokeBrowserSession();
         session_regenerate_id(true);
+        $_SESSION = [];
         $_SESSION['platform_user_id'] = (int)$user['id'];
         $_SESSION['platform_auth_version'] = (string)$user['auth_version'];
         $_SESSION['platform_last_seen'] = time();
+        $_SESSION['platform_started_at'] = time();
+        $_SESSION['platform_regenerated_at'] = time();
         $update = Database::connection()->prepare('UPDATE users SET last_login_at=?, updated_at=? WHERE id=?');
         $update->execute([time(), time(), (int)$user['id']]);
         Audit::record((int)$user['id'], 'auth.login', 'user', (string)$user['id']);
@@ -81,6 +99,7 @@ final class Auth
     {
         if (session_status() !== PHP_SESSION_ACTIVE) Security::startSession();
         $userId = (int)($_SESSION['platform_user_id'] ?? 0);
+        Oidc::revokeBrowserSession();
         $_SESSION = [];
         if (ini_get('session.use_cookies')) {
             $params = session_get_cookie_params();
@@ -110,8 +129,8 @@ final class Auth
             $org = $db->prepare('INSERT INTO organisations(name,slug,kind,status,monthly_request_limit,created_at,updated_at) VALUES(?,?,?,?,?,?,?)');
             $org->execute([$school, $slug, 'school', 'active', (int)Config::get('feedback_org_month_limit', 2000), $now, $now]);
             $orgId = (int)$db->lastInsertId();
-            $user = $db->prepare('INSERT INTO users(username,email,display_name,password_hash,role,status,auth_version,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)');
-            $user->execute([$username, $email, $displayName, password_hash($password, PASSWORD_ARGON2ID), 'admin', 'active', bin2hex(random_bytes(16)), $now, $now]);
+            $user = $db->prepare('INSERT INTO users(username,email,display_name,password_hash,role,status,auth_version,created_at,updated_at,email_verified_at) VALUES(?,?,?,?,?,?,?,?,?,?)');
+            $user->execute([$username, $email, $displayName, password_hash($password, PASSWORD_ARGON2ID), 'admin', 'active', bin2hex(random_bytes(16)), $now, $now, $now]);
             $userId = (int)$db->lastInsertId();
             $membership = $db->prepare('INSERT INTO organisation_memberships(user_id,organisation_id,membership_role,is_default,created_at) VALUES(?,?,?,?,?)');
             $membership->execute([$userId, $orgId, 'owner', 1, $now]);
@@ -127,7 +146,7 @@ final class Auth
     public static function createFromInvitation(string $token, array $input): int
     {
         $hash = hash('sha256', $token);
-        $statement = Database::connection()->prepare('SELECT * FROM invitations WHERE token_hash=? AND used_at IS NULL AND expires_at>?');
+        $statement = Database::connection()->prepare('SELECT * FROM invitations WHERE token_hash=? AND used_at IS NULL AND revoked_at IS NULL AND expires_at>?');
         $statement->execute([$hash, time()]);
         $invite = $statement->fetch(PDO::FETCH_ASSOC);
         if (!is_array($invite)) throw new \RuntimeException('Die Einladung ist ungültig oder abgelaufen.');
@@ -149,8 +168,13 @@ final class Auth
         $now = time();
         $db->beginTransaction();
         try {
-            $user = $db->prepare('INSERT INTO users(username,email,display_name,password_hash,role,status,auth_version,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)');
-            $user->execute([$username, $email, $displayName, password_hash($password, PASSWORD_ARGON2ID), $invite['role'], 'active', bin2hex(random_bytes(16)), $now, $now]);
+            $preference = $db->prepare('SELECT platform_updates_opt_in,platform_updates_opted_at FROM access_requests WHERE invitation_id=? LIMIT 1');
+            $preference->execute([(int)$invite['id']]);
+            $preferenceRow = $preference->fetch(PDO::FETCH_ASSOC) ?: [];
+            $updatesOptIn = empty($preferenceRow['platform_updates_opt_in']) ? 0 : 1;
+            $updatesOptedAt = $updatesOptIn ? (int)($preferenceRow['platform_updates_opted_at'] ?: $now) : null;
+            $user = $db->prepare('INSERT INTO users(username,email,display_name,password_hash,role,status,auth_version,created_at,updated_at,email_verified_at,platform_updates_opt_in,platform_updates_opted_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)');
+            $user->execute([$username, $email, $displayName, password_hash($password, PASSWORD_ARGON2ID), $invite['role'], 'active', bin2hex(random_bytes(16)), $now, $now, $now, $updatesOptIn, $updatesOptedAt]);
             $userId = (int)$db->lastInsertId();
             if ((int)($invite['organisation_id'] ?? 0) > 0) {
                 $membership = $db->prepare('INSERT INTO organisation_memberships(user_id,organisation_id,membership_role,is_default,created_at) VALUES(?,?,?,?,?)');
@@ -158,6 +182,8 @@ final class Auth
             }
             $used = $db->prepare('UPDATE invitations SET used_at=? WHERE id=? AND used_at IS NULL');
             $used->execute([$now, (int)$invite['id']]);
+            $request = $db->prepare('UPDATE access_requests SET registered_user_id=?,registered_at=?,updated_at=? WHERE invitation_id=? AND status="approved" AND registered_at IS NULL');
+            $request->execute([$userId, $now, $now, (int)$invite['id']]);
             $db->commit();
             Audit::record($userId, 'invite.accepted', 'invitation', (string)$invite['id']);
             return $userId;
@@ -188,6 +214,16 @@ final class Auth
         return is_array($user) && ($user['role'] ?? '') === 'admin';
     }
 
+    public static function validatePassword(string $password): void
+    {
+        $length = function_exists('mb_strlen') ? mb_strlen($password, 'UTF-8') : strlen($password);
+        if ($length < 15) {
+            throw new \RuntimeException('Das Passwort braucht mindestens 15 Zeichen. Ein langer, gut merkbarer Passwortsatz ist geeignet.');
+        }
+        if ($length > 256) throw new \RuntimeException('Das Passwort darf höchstens 256 Zeichen lang sein.');
+        if (str_contains($password, "\0")) throw new \RuntimeException('Das Passwort enthält ein ungültiges Zeichen.');
+    }
+
     private static function verifyLegacyPassword(string $password): bool
     {
         $file = (string)Config::get('legacy_auth_file');
@@ -209,9 +245,7 @@ final class Auth
         if (strlen($displayName) < 2) throw new \RuntimeException('Bitte einen vollständigen Anzeigenamen eingeben.');
         if (!preg_match('/^[a-z0-9][a-z0-9._-]{2,59}$/', $username)) throw new \RuntimeException('Der Benutzername braucht mindestens drei Zeichen und darf Buchstaben, Zahlen, Punkt, Unterstrich und Gedankenstrich enthalten.');
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) throw new \RuntimeException('Bitte eine gültige E-Mail-Adresse eingeben.');
-        if (strlen($password) < 12 || !preg_match('/[A-ZÄÖÜ]/u', $password) || !preg_match('/[a-zäöüß]/u', $password) || !preg_match('/\d/', $password)) {
-            throw new \RuntimeException('Das neue Passwort braucht mindestens 12 Zeichen sowie Groß-, Kleinbuchstaben und eine Zahl.');
-        }
+        self::validatePassword($password);
     }
 
     private static function uniqueOrgSlug(string $name): string

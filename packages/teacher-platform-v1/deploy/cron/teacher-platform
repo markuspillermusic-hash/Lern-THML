@@ -1,3 +1,3 @@
-# Pfade an die Installation anpassen.
-12 3 * * * root /usr/bin/php /srv/teacher-platform-v1/bin/maintenance.php >/dev/null
-17 3 * * * root /usr/bin/php /srv/teacher-platform-v1/bin/backup.php >/dev/null
+# Abgelaufene Daten löschen, danach konsistentes SQLite-Backup außerhalb des Webroots.
+12 3 * * * root /usr/bin/php /websites/_protected/teacher-platform-v1/bin/maintenance.php >/dev/null
+17 3 * * * root /usr/bin/php /websites/_protected/teacher-platform-v1/bin/backup.php >/dev/null

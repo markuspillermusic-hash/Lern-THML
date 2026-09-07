@@ -1,0 +1,190 @@
+{
+  "version": 1,
+  "moduleId": "religion13-1-1-ethische-grundlegung",
+  "fields": {
+    "trailerFacts": "Fall · gesicherte Angaben",
+    "trailerAssumption": "Fall · offene Annahme",
+    "trailerLawMoral": "Fall · Rechtsfrage und moralische Frage",
+    "verdictAReason": "Urteil A · stärkster Grund",
+    "talkshowAnalysis": "Talkshow · Argumentanalyse",
+    "verdictBReason": "Urteil B · Argument und Grenze",
+    "termCardWert": "Lernkarte · Wert",
+    "termCardNorm": "Lernkarte · Norm",
+    "termCardMoral": "Lernkarte · Moral",
+    "termCardEthos": "Lernkarte · Ethos",
+    "termCardEthik": "Lernkarte · Ethik",
+    "termCardTugend": "Lernkarte · Tugend",
+    "normType1": "Normarten · vereinbarte Pünktlichkeit",
+    "normType2": "Normarten · rote Fußgängerampel",
+    "normType3": "Normarten · freiwillige Hilfe nach Schichtende",
+    "normType4": "Normarten · privates Foto ohne Einwilligung",
+    "normType5": "Normarten · geteilte Zusammenfassung",
+    "normType6": "Normarten · Ausredenlassen",
+    "normTypeReason": "Normarten · Verbindlichkeitsgrad begründen",
+    "term1": "Begriffe zuordnen · Moral",
+    "term2": "Begriffe zuordnen · Wert",
+    "term3": "Begriffe zuordnen · Ethos",
+    "term4": "Begriffe zuordnen · Norm",
+    "term5": "Begriffe zuordnen · Tugend",
+    "term6": "Begriffe zuordnen · Ethik",
+    "term7": "Begriffe zuordnen · Norm aus Lebensschutz",
+    "term8": "Begriffe zuordnen · Wert Freiheit",
+    "islandPlan": "islandPlan",
+    "islandRules": "islandRules",
+    "islandTransfer": "islandTransfer",
+    "decalogueIndicative": "decalogueIndicative",
+    "decalogueProtection": "decalogueProtection",
+    "antithesisComparison": "antithesisComparison",
+    "sabbathInterpretation": "sabbathInterpretation",
+    "bibleTransferContext": "Bibeltransfer · Textsinn und Kontext",
+    "bibleTransferProtection": "Bibeltransfer · Schutzgedanke",
+    "bibleTransferCase": "Bibeltransfer · Fallbezug",
+    "bibleTransferLimit": "Bibeltransfer · Reichweite und Gegenargument",
+    "argumentTypeAnalysis": "Begründungsformen · Analyse",
+    "epicurusSummary": "Epikur · Textzusammenfassung",
+    "epicurusRelation": "Epikur · Lust, Folgenprüfung und Klugheit",
+    "desire1": "Epikur · unbegrenzte Bekanntheit",
+    "desire2": "Epikur · Wasser",
+    "desire3": "Epikur · Lieblingsgericht",
+    "desire4": "Epikur · sicherer Schlafplatz",
+    "desire5": "Epikur · ständiger Vergleich",
+    "desire6": "Epikur · besonderes Gewürz",
+    "experienceReason": "Erlebnismaschine · erster Grund",
+    "experienceJudgement": "Erlebnismaschine · Beurteilung",
+    "hedonismTerror": "Hedonismus · Anwendung auf Terror",
+    "kantSummary": "kantSummary",
+    "kantMaxim": "Kant · Maxime",
+    "kantGoldenCommon": "Kant und Goldene Regel · Gemeinsamkeit",
+    "kantGoldenDifference": "Kant und Goldene Regel · Unterschied",
+    "kantCheating": "Kant · Spickfall",
+    "goldenCheating": "Goldene Regel · Spickfall",
+    "kantGoldenDecision": "Spickfall · persönliche Entscheidung",
+    "millSummary": "Mill · Textzusammenfassung",
+    "millUniversalism": "Mill · Universalismus",
+    "millPodcastNotes": "Mill · Podcastnotizen",
+    "matrixShootNow": "Folgenmatrix · Abschuss sofort",
+    "matrixNoShootNow": "Folgenmatrix · kein Abschuss sofort",
+    "matrixShootLater": "Folgenmatrix · Abschuss später",
+    "matrixNoShootLater": "Folgenmatrix · kein Abschuss später",
+    "trolleyReason": "Weichenfall · Grund",
+    "trolleyJudgement": "Weichenfall · Beurteilung",
+    "bridgeReason": "Brückenfall · Vergleich",
+    "bridgeJudgement": "Brückenfall · Beurteilung",
+    "utilitarianTerror": "Utilitarismus · Anwendung auf Terror",
+    "talkModelJung": "Talkshow · Modell Jung",
+    "talkReasonJung": "Talkshow · Begründung Jung",
+    "talkModelBaum": "Talkshow · Modell Baum",
+    "talkReasonBaum": "Talkshow · Begründung Baum",
+    "talkModelBahr": "Talkshow · Modell Bahr",
+    "talkReasonBahr": "Talkshow · Begründung Bahr",
+    "talkModelWassmann": "Talkshow · Modell Wassmann",
+    "talkReasonWassmann": "Talkshow · Begründung Wassmann",
+    "talkshowModelAnalysis": "Talkshow · Vergleich der Zuordnungen",
+    "bverfgSummary": "Bundesverfassungsgericht · Kernaussage",
+    "bverfgScope": "Bundesverfassungsgericht · Reichweite",
+    "boundaryJudgement": "Grenzen der Güterabwägung",
+    "receptionHistory": "Bibel · Rezeptionsvergleich",
+    "gs16Summary": "Gaudium et spes 16 · Zusammenfassung",
+    "gs16Relation": "Gaudium et spes 16 · Gewissensbildung",
+    "conscience1": "Gewissen · Konvention",
+    "conscience2": "Gewissen · begründetes Urteil",
+    "conscience3": "Gewissen · Intuition",
+    "conscience4": "Gewissen · Willkür",
+    "conscience5": "Gewissen · Urteilsrevision",
+    "conscience6": "Gewissen · Mehrheitsanpassung",
+    "normChange": "Normenwandel · Beispiel",
+    "finalJudgement": "Urteil C · Argumentationskette",
+    "balanceStable": "Bilanz · was blieb gleich",
+    "balanceChanged": "Bilanz · was hat sich verändert",
+    "balanceCriterion": "Bilanz · entscheidender Maßstab",
+    "balanceUncertainty": "Bilanz · verbleibende Unsicherheit",
+    "transferModel": "Transfer · Modell",
+    "transferJudgement": "Transfer · 37 Sekunden",
+    "eaAreaComparison": "eA · Bereichsvergleich",
+    "examPlan": "Klausurtraining · Schreibplan"
+  },
+  "materials": {
+    "hero-leitfrage": {
+      "text": "Welches Urteil kann ich mit Blick auf Güter, Normen, Folgen, Menschenwürde und mein gebildetes Gewissen verantworten?",
+      "label": "hero-leitfrage"
+    },
+    "trailer-alternative": {
+      "text": "Der Trailer zeigt den angeklagten Piloten im Gerichtssaal. Anklage und Verteidigung markieren den Konflikt: Darf ein Mensch 164 Unschuldige töten, um eine sehr viel größere Zahl zu retten? Die Inszenierung macht das Publikum zu Schöffen, beantwortet die Frage aber nicht.",
+      "label": "trailer-alternative"
+    },
+    "ethik-grundbegriffe": {
+      "text": "\n          M1 · Eigener didaktischer Fachtext\n          \n            Vom Wert zum verantworteten Handeln\n            Menschen entscheiden nicht im luftleeren Raum. Sie orientieren sich an Vorstellungen davon, was gut, erstrebenswert oder schützenswert ist. Solche grundlegenden Orientierungen heißen Werte. Leben, Freiheit, Sicherheit, Gerechtigkeit oder Menschenwürde können als Werte gelten. Ein Wert sagt zunächst, was Bedeutung besitzt; er legt aber noch nicht eindeutig fest, was in einer konkreten Situation zu tun ist.\n            Damit Werte handlungsleitend werden, werden sie in Normen übersetzt. Eine Norm ist eine begründungsbedürftige Regel, die für bestimmte Adressaten und Situationen festlegt, was geboten, verboten, erwartet oder erlaubt ist. Sie beschreibt also nicht bloß, was Menschen gewöhnlich tun, sondern erhebt einen Anspruch darauf, wie gehandelt werden soll. Zu einer präzisen Norm gehören deshalb ihr Schutzwert, ihre Adressaten, ihr Geltungsbereich, mögliche Bedingungen und die Stärke ihres Verbindlichkeitsanspruchs.\n            Die deontische Logik unterscheidet grundlegend Verpflichtung, Verbot und Erlaubnis. Für diesen Lernpfad wird zusätzlich innerhalb des Verbindlichkeitsanspruchs didaktisch zwischen Muss-, Soll- und Kann-Normen unterschieden. Diese Dreiteilung ist eine Arbeitsdefinition; die Bezeichnungen werden in Philosophie, Alltagssprache und Rechtswissenschaft nicht überall identisch verwendet.\n            \n              Muss-NormSie formuliert ein striktes Gebot oder Verbot. Innerhalb ihres Geltungsbereichs besteht keine moralisch gleichwertige Option, sie einfach nicht zu befolgen. Beispiel: Der Staat muss die Menschenwürde achten – oder als Verbot formuliert: Er darf unschuldige Menschen nicht zu bloßen Objekten machen.\n              Soll-NormSie bezeichnet einen verbindlichen Regelfall, von dem nur in einer begründungsbedürftigen Ausnahmesituation abgewichen werden darf. „Soll“ bedeutet hier nicht bloß einen unverbindlichen Wunsch. Beispiel: Ein Pilot soll rechtmäßige Befehle befolgen; eine Abweichung verlangt einen außergewöhnlich starken Grund.\n              Kann-NormSie eröffnet eine erlaubte Handlungsmöglichkeit, ohne sie zur Pflicht zu machen. Dazu können freiwillige Handlungen über das geschuldete Maß hinaus gehören. „Kann“ bezeichnet hier normative Erlaubnis oder Spielraum – nicht bloß die faktische Fähigkeit, etwas zu tun.\n            \n            Die Normart lässt sich nicht zuverlässig am einzelnen Wort muss, soll oder kann ablesen. Die Formulierung „Du sollst vertrauliche Gesundheitsdaten nicht weitergeben“ kann beispielsweise eine strikte Grenze markieren. Entscheidend sind Begründung, Kontext, Geltungsbereich und die Frage, ob eine Abweichung überhaupt als vertretbar gedacht wird. Derselbe Wert kann verschiedene Normen stützen, und mehrere Werte können kollidierende Normen begründen. Im Fall „Terror“ stehen deshalb nicht einfach „Leben gegen Leben“, sondern auch Schutzpflicht, Menschenwürde, Sicherheit und Rechtsbindung samt den daraus abgeleiteten Normen in Spannung.\n            Mit Moral bezeichnet man das Gefüge von Werten, Normen und eingeübten Urteilen, das für eine Person oder Gemeinschaft tatsächlich gilt oder von ihr beansprucht wird. Moral zeigt sich also darin, was Menschen für richtig halten und wie sie handeln. Der Begriff Ethos hebt innerhalb dieses Gefüges stärker die charakteristische Grundhaltung oder den gelebten Stil hervor: zum Beispiel das Berufsethos eines Piloten, das Ethos wissenschaftlicher Redlichkeit oder das Ethos rechtsstaatlicher Amtsführung.\n            Ethik ist nicht bloß eine weitere Moral neben anderen. Sie reflektiert moralische Überzeugungen methodisch: Welche Tatsachen sind gesichert? Welche Werte und Normen stehen im Konflikt? Wie lassen sich Normen begründen? Wer ist betroffen? Welche Folgen, Rechte und Einwände müssen geprüft werden? Ethik kann darum auch verbreitete Moral kritisieren. Sie liefert allerdings nicht für jede Extremsituation eine widerspruchsfreie Rechenregel.\n            Zwischen Einsicht und Handlung steht schließlich die Tugend. Damit ist eine erworbene, verlässliche Haltung gemeint, durch die jemand Situationen angemessen wahrnimmt, vernünftig urteilt und entsprechend handelt. Besonnenheit, Gerechtigkeit oder Mut ersetzen keine ethische Begründung; sie helfen aber, gute Gründe auch unter Druck verantwortlich umzusetzen. Im Filmfall müsste daher getrennt geprüft werden, welche Norm gelten soll, wie sie begründet wird und welche Haltung der Pilot bei seiner Entscheidung zeigt.\n            Zusammenhang: Werte geben Orientierung, Normen konkretisieren sie, Moral umfasst geltende Überzeugungen und Regeln, Ethos bezeichnet deren gelebte Grundhaltung, Ethik prüft ihre Begründung, und Tugenden verbinden begründetes Urteil mit verlässlichem Handeln. Die Begriffe überschneiden sich in der Fachliteratur teilweise; für die folgende Urteilsarbeit dienen diese Abgrenzungen als nachvollziehbare Arbeitsdefinitionen.\n          \n        ",
+      "label": "ethik-grundbegriffe"
+    },
+    "dekalog-indikativ-imperativ": {
+      "text": "\n              M2 · Ex 20,1–17 · Einheitsübersetzung 2016 und katholische LernfassungDer Dekalog: erst Befreiung, dann Weisung\n              „Ich bin der HERR, dein Gott, der dich aus dem Land Ägypten geführt hat, aus dem Sklavenhaus.“\n              Dieser Satz ist ein Indikativ: Er sagt zuerst zu, was Gott für Israel getan hat. Erst danach folgen die Imperative, also die Weisungen. Zur Orientierung stehen hier alle zehn in einer knappen katholischen Lernfassung:\n              \n                1Gott allein verehren.\n                2Gottes Namen nicht missbrauchen.\n                3Den Tag des Herrn heiligen.\n                4Vater und Mutter ehren.\n                5Nicht töten.\n                6Die Ehe nicht brechen.\n                7Nicht stehlen.\n                8Nicht falsch gegen andere aussagen.\n                9Nicht die Partnerin oder den Partner eines anderen begehren.\n                10Nicht den Besitz anderer begehren.\n              \n              Die Reihenfolge ist theologisch entscheidend: Israel soll sich die Freiheit nicht verdienen. Die Gebote zeigen, wie geschenkte Freiheit in einer Gemeinschaft bewahrt werden kann. Das Tötungsverbot steht deshalb nicht isoliert, sondern im Horizont von Befreiung, Bund, Ruhe, Schutz und verlässlicher Beziehung.\n              Merksatz: Indikativ vor Imperativ – Zusage vor Anspruch. Wortlaut und Zählung unterscheiden sich in jüdischer, katholischer, lutherischer und reformierter Tradition. Ex 20 vollständig lesen\n            ",
+      "label": "dekalog-indikativ-imperativ"
+    },
+    "bergpredigt-antithesen": {
+      "text": "\n              M3 · Mt 5,21–24 und Mk 2,27 · Einheitsübersetzung 2016Von der äußeren Regel zu ihrem Beziehungssinn\n              „Ihr habt gehört, dass zu den Alten gesagt worden ist: Du sollst nicht töten … Ich aber sage euch: Jeder, der seinem Bruder auch nur zürnt, soll dem Gericht verfallen sein.“\n              In den Antithesen hebt Jesus den Dekalog nicht einfach auf. Er führt die Weisung auf die Haltung und die beschädigte Beziehung zurück: Gewalt beginnt nicht erst mit der vollendeten Tat. Deshalb schließt der Text die Aufforderung zur Versöhnung an. Entscheidend ist nicht ein äußerlich korrekter Gebotsgehorsam, der Zorn, Demütigung und Feindschaft unberührt lässt.\n              „Der Sabbat wurde für den Menschen gemacht, nicht der Mensch für den Sabbat.“\n              Der Sabbatsatz steht nicht in den Antithesen, sondern in Mk 2,27. Er ergänzt denselben hermeneutischen Gedanken: Eine Weisung soll dem Leben dienen. Das bedeutet aber nicht, dass jedes Gebot beliebig wird. Zu prüfen ist, welches Gut die Weisung schützt und ob eine konkrete Auslegung diesen Schutz trägt oder verfehlt.\n              Mt 5 im Kontext · Mk 2,27 im Kontext\n            ",
+      "label": "bergpredigt-antithesen"
+    },
+    "epikur-paraphrase": {
+      "text": "\n            M6 · Quellenbasierter Fachtext mit PrimärtextbezugLust, Klugheit und das gelingende Leben bei EpikurM6 ist für diese Lerneinheit verfasst. Der kurze Primärtextimpuls wurde neu übersetzt.\n            A1Hedonismus nennt Lust das grundlegende Gut und Schmerz ein grundlegendes Übel. Damit ist noch nicht entschieden, welche Lust gewählt werden soll. Epikur setzt im Brief an Menoikeus beim menschlichen Erleben an: Lust und Schmerz geben Orientierung für Wahl und Vermeidung. Sein Hedonismus empfiehlt nicht das intensivste angenehme Gefühl im jeweiligen Augenblick. Er fragt nach der Gestalt eines ganzen gelingenden Lebens.\n            A2Epikur bestimmt das Ziel als einen Zustand, in dem der Körper nicht schmerzt und die Seele nicht beunruhigt ist. In der epikureischen Tradition werden dafür die Begriffe aponía – Freiheit von körperlichem Schmerz – und ataraxía – Unerschütterlichkeit beziehungsweise Seelenruhe – verwendet. Ein schlichtes Essen kann daher wertvoller sein als luxuriöser Genuss: Es stillt ein wirkliches Bedürfnis, macht weniger abhängig und erzeugt nicht ständig neue Sorge. Lust bezeichnet hier auch die ruhige Zufriedenheit, der nichts Wesentliches fehlt.\n            Warum steht hier „Lust“?Im griechischen Text steht hēdonḗ (ἡδονή). Der deutsche Fachbegriff dafür ist „Lust“. „Spaß“ wäre zu eng. Für Epikurs ruhende Lust trifft im heutigen Deutsch oft „Zufriedenheit“ besser. „Freude“ ist eine hilfreiche sprachliche Brücke, ersetzt den Fachbegriff aber nicht; Epikur verwendet für geistige Freude auch den eigenen Ausdruck chará.\n            A3Für die Wahl ist die Unterscheidung der Wünsche wichtig. Natürliche und notwendige Wünsche betreffen etwa Nahrung, Schutz und grundlegende Gemeinschaft. Natürliche, aber nicht notwendige Wünsche können das Leben verschönern, sind für sein Gelingen jedoch nicht unverzichtbar. Leere oder maßlose Wünsche – etwa grenzenloser Ruhm – besitzen keinen natürlichen Sättigungspunkt und halten die Seele in Unruhe. Die Einteilung prüft, welchen Preis ein Wunsch für Freiheit und Lebensruhe fordert.\n            Primärtextimpuls · eigene Übersetzung„Darum wählen wir auch nicht jede Lust; vielmehr übergehen wir manche, wenn uns aus ihnen ein größeres Unbehagen folgt.“Epikur, Brief an Menoikeus, Abschnitt 129.\n            A4Darum besitzt die praktische Klugheit eine Schlüsselrolle. Manche Lust wird zurückgewiesen, wenn sie später mehr Schmerz verursacht; manche Anstrengung wird gewählt, wenn daraus eine größere und dauerhaftere Befriedigung entsteht. Klugheit prüft Nähe und Ferne, Sicherheit und Risiko, Abhängigkeit und Freiheit. Für Epikur gehören ein angenehmes Leben und ein kluges, gerechtes und ehrenhaftes Leben zusammen. Tugenden sind Bedingungen stabilen Glücks.\n            A5Als Normenbegründung erklärt Epikurs Ansatz, warum Selbstbegrenzung vernünftig sein kann: Sie schützt vor vermeidbarem Leid und ermöglicht dauerhafte Zufriedenheit, Freundschaft und Seelenruhe. Seine Stärke liegt in der Kritik impulsiver Entscheidungen. Bei öffentlichen Konflikten bleibt eine Frage offen: Wie werden die Interessen vieler verschiedener Menschen unparteiisch gegeneinander abgewogen? An diesem Punkt setzt der Utilitarismus an.\n            Quellenbasis: Epikur, Brief an Menoikeus, griechisch/englisch, besonders Abschnitte 127–132; Stanford Encyclopedia of Philosophy: Epicurus. Eigenständiger Darstellungstext, aktualisiert am 05.09.2026.\n          ",
+      "label": "epikur-paraphrase"
+    },
+    "experience-machine-present": {
+      "text": "Gegenwartsbezug · reale Technik, begrenzter VergleichWas heutige VR mit dem Gedankenexperiment zu tun hatMark Zuckerberg beschrieb 2021 für Meta die Vision eines stärker immersiven, körperlich erfahrenen Internets mit sozialer Präsenz. Experimente mit immersiver VR zeigen bereits, dass synchronisierte virtuelle Körperreize die Selbstwahrnehmung und Handlungsbereitschaft beeinflussen können. Das ist nicht Nozicks Maschine: Heutige VR bleibt technisch begrenzt, zeitweise und als Simulation erkennbar. Der Vergleich führt deshalb zu einer genaueren Frage: Wenn digitale Erlebnisse immer überzeugender werden, ist ihr gutes Gefühl dasselbe wie ein wirklich geführtes Leben?Meta: Founder’s Letter 2021Primärstudie zu Verkörperung in immersiver VR",
+      "label": "experience-machine-present"
+    },
+    "kant-kategorischer-imperativ": {
+      "text": "\n              M4 · Immanuel Kant · Grundlegung zur Metaphysik der Sitten · AA IV, 421 und 429Zwei Formeln – ein Grundgedanke\n              K1Eine Maxime ist der persönliche Grundsatz einer Handlung: „Wenn Situation S eintritt, tue ich H, um Ziel Z zu erreichen.“ Der kategorische Imperativ prüft nicht zuerst, ob das Ziel nützt, sondern ob der Grundsatz als Regel für alle vernünftig gewollt werden kann.\n              Allgemeine-Gesetzes-Formel„Handle nur nach derjenigen Maxime, durch die du zugleich wollen kannst, dass sie ein allgemeines Gesetz werde.“Kant, GMS, AA IV, 421.\n              K2Die Selbstzweckformel schärft die Prüfung: Menschen besitzen als vernünftige und freie Personen eigenen Wert. Sie dürfen in Zusammenarbeit durchaus Mittel füreinander sein; verboten ist, jemanden bloß als Mittel zu behandeln, also seine eigene Zwecksetzung und Würde zu übergehen.\n              Selbstzweckformel„Handle so, dass du die Menschheit sowohl in deiner Person als in der Person eines jeden andern jederzeit zugleich als Zweck, niemals bloß als Mittel brauchst.“Kant, GMS, AA IV, 429.\n              K3Pflicht meint bei Kant deshalb keinen blinden Gehorsam gegenüber einer äußeren Autorität. Moralische Bindung entsteht aus vernünftiger Selbstgesetzgebung. Gerade im Dilemma muss zuerst sauber formuliert werden, welche Maxime und welche Pflicht tatsächlich geprüft werden. Die Wörter „Pflicht“ oder „Menschenwürde“ allein ersetzen noch kein Argument.\n              Kants Grundlegung im Volltext\n            ",
+      "label": "kant-kategorischer-imperativ"
+    },
+    "mill-paraphrase": {
+      "text": "\n            M5 · Quellenbasierter Fachtext mit PrimärtextbezugVom individuellen Glück zur unparteiischen FolgenprüfungM5 ist für diese Lerneinheit verfasst. Der kurze Primärtextimpuls wurde neu übersetzt.\n            B1John Stuart Mill formuliert im 19. Jahrhundert den klassischen Utilitarismus als Theorie moralisch richtigen Handelns. Das Nutzen- oder Prinzip des größten Glücks beurteilt eine Handlung danach, ob ihre absehbaren Folgen Glück fördern oder Leid vermehren. Darin liegt ein wichtiger Unterschied zu Epikur: Nicht nur die gelingende Lebensführung der handelnden Person, sondern die moralische Richtigkeit einer Handlung für alle Betroffenen steht im Zentrum.\n            Primärtextimpuls · eigene Übersetzung„Handlungen sind richtig, soweit sie Glück fördern, und falsch, soweit sie das Gegenteil hervorbringen.“John Stuart Mill, Utilitarianism, Kapitel II.\n            B2Utilitarismus ist deshalb kein ethischer Egoismus. Der Handelnde darf das eigene Glück nicht automatisch höher gewichten als das eines anderen Menschen. Moralische Prüfung verlangt eine unparteiische Perspektive: Vergleichbare Interessen sollen gleich berücksichtigt werden, unabhängig davon, wessen Interessen es sind. Eine Mehrheit zählt zwar moralisch mit, aber eine Abstimmungsmehrheit ersetzt die Folgenprüfung nicht. Auch Intensität, Dauer, Wahrscheinlichkeit und Verteilung von Wohlergehen und Leid sind zu beachten.\n            B3Mill versteht Glück als Lust und Freiheit von Schmerz, unterscheidet aber die Qualität von Freuden. Geistige, soziale und moralische Tätigkeiten können für Menschen wertvoller sein als bloße Sinnesreize. Als Prüfidee verweist er auf Personen, die beide Arten aus Erfahrung kennen. Damit will Mill zeigen, dass Nutzen nicht einfach durch Zählen angenehmer Momente bestimmt wird. Zum Wohlergehen gehören auch Bildung, Freiheit, verlässliche Beziehungen und ein Sinn für Würde.\n            B4Im Alltag berechnet niemand vor jeder Handlung sämtliche Folgen neu. Mill verweist daher auf sekundäre moralische Regeln, in denen sich menschliche Erfahrung bündelt – etwa Verlässlichkeit, Wahrhaftigkeit oder Schutz vor Gewalt. Solche Regeln gelten nicht unabhängig vom Nutzenprinzip, sind aber wichtige Orientierung, weil Menschen irren, sich selbst begünstigen und langfristige Wirkungen übersehen. Erst wenn Regeln kollidieren oder ein Ausnahmefall entsteht, muss das oberste Prinzip die Gründe neu ordnen.\n            B5Für den Fall „Terror“ reicht deshalb die Rechnung „70.000 sind mehr als 164“ nicht aus. Zu prüfen sind mindestens beide Handlungsoptionen, alle unmittelbar und mittelbar Betroffenen, die Wahrscheinlichkeit des angedrohten Anschlags, mögliche Rettungsalternativen sowie langfristige Folgen einer allgemeinen Abschussregel: Fehlentscheidungen, Missbrauch, Vertrauen in den Staat und Schutz von Minderheiten. Die Unterscheidung von Handlungs- und Regelutilitarismus macht sichtbar, dass eine einzelne Folgenprognose und die Folgen einer allgemeinen Regel zu verschiedenen Urteilen führen können.\n            B6Die Stärke des Utilitarismus liegt darin, Leid keiner Person von vornherein unsichtbar zu machen und Entscheidungen rechenschaftspflichtig auf ihre Folgen zu prüfen. Seine Grenze liegt in der Frage, ob individuelle Rechte ausreichend geschützt sind, wenn ein größerer Gesamtnutzen durch die gezielte Schädigung weniger Menschen erreicht werden könnte. Genau deshalb muss eine utilitaristische Begründung nicht nur Zahlen nennen, sondern Unsicherheiten, Verteilung und starke Einwände offenlegen.\n            Quellenbasis: John Stuart Mill, Utilitarianism, besonders Kapitel II und V; Stanford Encyclopedia of Philosophy: The History of Utilitarianism. Eigenständiger Darstellungstext, aktualisiert am 05.09.2026.\n          ",
+      "label": "mill-paraphrase"
+    },
+    "bverfg-paraphrase": {
+      "text": "\n          GG\n          M7 · Bundesverfassungsgericht · 1 BvR 357/05 · Rn. 124Menschen dürfen nicht zu Objekten staatlicher Rettungsrechnung werden„Sie werden dadurch, dass ihre Tötung als Mittel zur Rettung anderer benutzt wird, verdinglicht und zugleich entrechtlicht.“Das Gericht erklärte 2006 die damalige gesetzliche Abschussermächtigung insoweit für nichtig, wie davon ein von tatunbeteiligten Menschen besetztes Flugzeug betroffen wäre. Der Staat dürfe diese Menschen nicht behandeln, als seien sie bloße Bestandteile einer Waffe und für andere verfügbar.Geltungsbereich: M7 ist eine verfassungsrechtliche Aussage über staatliche Befugnisse. Sie entscheidet nicht automatisch die strafrechtliche Filmfrage nach Lars Kochs Schuld und ersetzt keine eigenständige moralische Begründung.Vollständige Entscheidung beim Bundesverfassungsgericht\n        ",
+      "label": "bverfg-paraphrase"
+    },
+    "gs16-paraphrase": {
+      "text": "\n          M8 · Zweites Vatikanisches Konzil · Gaudium et spes 16\n          Gewissenswürde, Wahrheitssuche und Irrtum\n          „Im Innern seines Gewissens entdeckt der Mensch ein Gesetz, das er sich nicht selbst gibt, sondern dem er gehorchen muß.“\n          Kontext des angezeigten Auszugs: Der Konzilstext beschreibt das Gewissen als innersten Ort persönlicher Verantwortung vor Gott. Zugleich verbindet er die Treue zum Gewissen mit gemeinsamer Wahrheitssuche und der Orientierung an objektiven moralischen Normen. Ein Gewissen kann aus unüberwindlicher Unkenntnis irren, ohne seine Würde zu verlieren; wer sich jedoch zu wenig um das Wahre und Gute bemüht, verfehlt die Aufgabe der Gewissensbildung.GS 16 verbindet daher persönliche Letztverantwortung mit Sachkenntnis, Beratung, Selbstkritik und der bleibenden Suche nach dem Guten. Diese Verbindung bildet den Ausgangspunkt der folgenden Textarbeit.\n          Gaudium et spes 16 vollständig beim Vatikan\n        ",
+      "label": "gs16-paraphrase"
+    }
+  },
+  "drawings": [],
+  "maps": {
+    "ethik-grundbegriffe": {
+      "id": "ethik-grundbegriffe",
+      "nodes": [
+        {
+          "id": "wert",
+          "title": "Wert",
+          "sourceField": "termCardWert"
+        },
+        {
+          "id": "norm",
+          "title": "Norm",
+          "sourceField": "termCardNorm"
+        },
+        {
+          "id": "moral",
+          "title": "Moral",
+          "sourceField": "termCardMoral"
+        },
+        {
+          "id": "ethos",
+          "title": "Ethos",
+          "sourceField": "termCardEthos"
+        },
+        {
+          "id": "ethik",
+          "title": "Ethik",
+          "sourceField": "termCardEthik"
+        },
+        {
+          "id": "tugend",
+          "title": "Tugend",
+          "sourceField": "termCardTugend"
+        }
+      ]
+    }
+  }
+}

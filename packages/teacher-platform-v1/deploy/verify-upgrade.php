@@ -1,0 +1,34 @@
+<?php
+declare(strict_types=1);
+// Run as root from a staged release. Creates a consistent backup and migrates ONLY its copy.
+if(PHP_SAPI!=='cli')exit(1);
+umask(0077);
+$target=(string)($argv[1] ?? '');
+if(!preg_match('~^/var/backups/teacher-platform-upgrade/[0-9]{8}-[0-9]{6}$~D',$target)||is_dir($target))throw new RuntimeException('New, exact backup target required.');
+$config=require '/etc/teacher-platform/config.php';
+$source=(string)$config['database'];
+if(realpath($source)!=='/var/lib/teacher-platform/platform.sqlite')throw new RuntimeException('Unexpected database path.');
+mkdir($target,0700,true);
+$live=new SQLite3($source,SQLITE3_OPEN_READONLY);
+$snapshot=new SQLite3($target.'/before.sqlite');
+if(!$live->backup($snapshot)||$snapshot->querySingle('PRAGMA integrity_check')!=='ok')throw new RuntimeException('Consistent backup failed.');
+$live->close();$snapshot->close();
+copy($target.'/before.sqlite',$target.'/restore.sqlite');
+copy((string)$config['master_key_file'],$target.'/restore-master.key');
+$db=new PDO('sqlite:'.$target.'/restore.sqlite');
+$before=[];foreach(['users','rooms','organisations'] as $table)$before[$table]=$db->query('SELECT COUNT(*) FROM '.$table)->fetchColumn();
+$credentialDigest=hash('sha256',json_encode($db->query('SELECT id,password_hash,auth_version FROM users ORDER BY id')->fetchAll(PDO::FETCH_ASSOC)));
+$db=null;
+$config['database']=$target.'/restore.sqlite';$config['data_dir']=$target.'/restore-data';$config['master_key_file']=$target.'/restore-master.key';$config['mail_mode']='disabled';
+file_put_contents($target.'/restore-config.php','<?php return '.var_export($config,true).';');
+putenv('TEACHER_PLATFORM_CONFIG='.$target.'/restore-config.php');
+require dirname(__DIR__).'/app/bootstrap.php';
+set_exception_handler(static function(Throwable $error):never {fwrite(STDERR,"Upgrade verification failed.\n");exit(1);});
+$db=ReligionPlatform\Database::connection();
+foreach($before as $table=>$count)if((int)$db->query('SELECT COUNT(*) FROM '.$table)->fetchColumn()!==(int)$count)throw new RuntimeException('Record count changed.');
+if(!hash_equals($credentialDigest,hash('sha256',json_encode($db->query('SELECT id,password_hash,auth_version FROM users ORDER BY id')->fetchAll(PDO::FETCH_ASSOC)))))throw new RuntimeException('Existing credentials changed.');
+if($db->query('PRAGMA integrity_check')->fetchColumn()!=='ok'||(int)$db->query('SELECT MAX(version) FROM schema_migrations')->fetchColumn()!==6)throw new RuntimeException('Restore migration failed.');
+if($db->query('PRAGMA foreign_key_check')->fetch())throw new RuntimeException('Foreign key check failed.');
+ReligionPlatform\Schema::migrate($db);
+file_put_contents($target.'/verified.json',json_encode(['backup_sha256'=>hash_file('sha256',$target.'/before.sqlite'),'migration'=>6,'restore'=>'passed','counts_preserved'=>true,'password_hashes_preserved'=>true,'time'=>gmdate('c')],JSON_PRETTY_PRINT));
+echo 'Consistent backup and isolated migration verified: '.$target."\n";

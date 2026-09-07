@@ -21,7 +21,7 @@
   ],
   "properties": {
     "$schema": { "type": "string", "minLength": 1 },
-    "schemaVersion": { "const": "1.0.0" },
+    "schemaVersion": { "enum": ["1.0.0", "1.1.0"] },
     "module": {
       "type": "object",
       "additionalProperties": false,
@@ -61,7 +61,12 @@
         "classroomCore": { "$ref": "#/$defs/semver" },
         "presentationCore": { "$ref": "#/$defs/semver" },
         "teacherPlatform": { "$ref": "#/$defs/semver" },
-        "moduleAdapter": { "$ref": "#/$defs/semver" }
+        "moduleAdapter": { "$ref": "#/$defs/semver" },
+        "learningTools": { "$ref": "#/$defs/semver" },
+        "learningState": { "$ref": "#/$defs/semver" },
+        "conceptMap": { "$ref": "#/$defs/semver" },
+        "review": { "$ref": "#/$defs/semver" },
+        "learningSync": { "$ref": "#/$defs/semver" }
       }
     },
     "routes": {
@@ -73,7 +78,8 @@
         "teacher": { "$ref": "#/$defs/webPath" },
         "beamer": { "$ref": "#/$defs/webPath" },
         "liveApi": { "$ref": "#/$defs/webPath" },
-        "feedbackApi": { "$ref": "#/$defs/webPath" }
+        "feedbackApi": { "$ref": "#/$defs/webPath" },
+        "learningWorkApi": { "$ref": "#/$defs/webPath" }
       }
     },
     "build": {
@@ -111,7 +117,7 @@
           "type": "array",
           "uniqueItems": true,
           "items": {
-            "enum": ["release", "polls", "cardWall", "timer", "presentation", "media", "imageLightbox", "details", "steppers", "theme"]
+            "enum": ["release", "polls", "cardWall", "timer", "presentation", "media", "imageLightbox", "details", "steppers", "theme", "protectedCourseMaterials", "conceptMapLocal"]
           }
         }
       }
@@ -171,8 +177,23 @@
       "properties": {
         "noticeUrl": { "$ref": "#/$defs/webPath" },
         "localStudentWork": { "const": true },
-        "serverStoresStudentAnswers": { "const": false },
+        "serverStoresStudentAnswers": { "type": "boolean" },
         "anonymousRoomState": { "const": true }
+      }
+    },
+    "personalLearning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "authentication", "requiresClassAssignment", "anonymousRoomSeparated", "localOfflineWork", "teacherAccess", "projection", "contract"],
+      "properties": {
+        "enabled": { "const": true },
+        "authentication": { "const": "shared-platform" },
+        "requiresClassAssignment": { "const": true },
+        "anonymousRoomSeparated": { "const": true },
+        "localOfflineWork": { "const": true },
+        "teacherAccess": { "const": "assigned-classes" },
+        "projection": { "const": "explicit-selection" },
+        "contract": { "$ref": "#/$defs/localPath" }
       }
     },
     "rights": {
@@ -205,6 +226,10 @@
     }
   },
   "allOf": [
+    {
+      "if": { "properties": { "privacy": { "properties": { "serverStoresStudentAnswers": { "const": true } } } } },
+      "then": { "required": ["personalLearning"], "properties": { "schemaVersion": { "const": "1.1.0" }, "versions": { "required": ["learningSync"] }, "routes": { "required": ["learningWorkApi"] } } }
+    },
     {
       "if": { "properties": { "classroom": { "properties": { "enabled": { "const": true } } } } },
       "then": {

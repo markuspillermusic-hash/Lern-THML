@@ -24,7 +24,8 @@ final class Security
         session_set_cookie_params([
             'lifetime' => 0,
             'path' => '/',
-            'secure' => true,
+            'secure' => !(Config::get('development_loopback_http', false) === true
+                && in_array((string)($_SERVER['SERVER_NAME'] ?? ''), ['127.0.0.1','localhost'], true)),
             'httponly' => true,
             'samesite' => 'Lax',
         ]);
@@ -33,9 +34,18 @@ final class Security
         session_start();
         $now = time();
         $idle = (int)Config::get('session_idle_seconds', 28800);
-        if (!empty($_SESSION['platform_last_seen']) && (int)$_SESSION['platform_last_seen'] < $now - $idle) {
+        $absolute = (int)Config::get('session_absolute_seconds', 43200);
+        $expiredByIdle = !empty($_SESSION['platform_last_seen']) && (int)$_SESSION['platform_last_seen'] < $now - $idle;
+        $expiredAbsolutely = !empty($_SESSION['platform_started_at']) && (int)$_SESSION['platform_started_at'] < $now - $absolute;
+        if ($expiredByIdle || $expiredAbsolutely) {
             $_SESSION = [];
             session_regenerate_id(true);
+        }
+        if (empty($_SESSION['platform_started_at'])) $_SESSION['platform_started_at'] = $now;
+        if (empty($_SESSION['platform_regenerated_at'])) $_SESSION['platform_regenerated_at'] = $now;
+        if ((int)$_SESSION['platform_regenerated_at'] < $now - 900) {
+            session_regenerate_id(true);
+            $_SESSION['platform_regenerated_at'] = $now;
         }
         $_SESSION['platform_last_seen'] = $now;
     }

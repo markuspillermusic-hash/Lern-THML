@@ -1,5 +1,7 @@
 (function () {
   "use strict";
+  // Optional feedback client 1.0.1: preserve completion and provider-error messages.
+  window.RELIGION_FEEDBACK_CLIENT_VERSION = "1.0.1";
 
   var config = window.RELIGION_CLASSROOM_CONFIG || {};
   var view = String(config.view || window.RELIGION_VIEW || "student");
@@ -238,11 +240,11 @@
       setState(widget, "Feedback wird erzeugt …");
       api("generate", { room: code, taskId: taskId, answer: bundledAnswer(widget), clientId: clientId }).then(function (data) {
         renderFeedback(widget.result, data);
+        updateButton(widget);
         setState(widget, "Rückmeldung bereit. Überarbeite nun gezielt deinen Text.");
-        updateButton(widget);
       }).catch(function (error) {
-        setState(widget, error.message, true);
         updateButton(widget);
+        setState(widget, error.message, true);
       });
     });
     widgets.push(widget);

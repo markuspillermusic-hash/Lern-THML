@@ -10,9 +10,16 @@ final class Maintenance
         $now ??= time();
         $db = Database::connection();
         $rules = [
+            'learning_projections' => ['DELETE FROM learning_projections WHERE expires_at < ?', $now],
+            'learning_assignments' => ['DELETE FROM learning_assignments WHERE retain_until < ?', $now],
+            'oidc_codes' => ['DELETE FROM platform_oidc_codes WHERE expires_at < ?', $now - 600],
+            'oidc_tokens' => ['DELETE FROM platform_oidc_tokens WHERE expires_at < ? OR revoked_at < ?', [$now - 86400, $now - 86400]],
             'rate_limits' => ['DELETE FROM rate_limits WHERE window_started_at < ?', $now - 2 * 86400],
             'invitations' => ['DELETE FROM invitations WHERE (used_at IS NOT NULL AND used_at < ?) OR (used_at IS NULL AND expires_at < ?)', [$now - 90 * 86400, $now - 30 * 86400]],
             'access_requests' => ["DELETE FROM access_requests WHERE status IN ('approved','rejected','archived') AND updated_at < ?", $now - 180 * 86400],
+            'password_resets' => ['DELETE FROM password_reset_tokens WHERE expires_at < ? OR used_at < ? OR revoked_at < ?', [$now - 7 * 86400, $now - 7 * 86400, $now - 7 * 86400]],
+            'support_tickets' => ["DELETE FROM support_tickets WHERE status IN ('resolved','closed') AND closed_at IS NOT NULL AND closed_at < ?", $now - 180 * 86400],
+            'ai_grants' => ['DELETE FROM ai_grants WHERE (status="revoked" AND revoked_at < ?) OR expires_at < ?', [$now - 180 * 86400, $now - 180 * 86400]],
             'feedback_usage' => ['DELETE FROM feedback_usage WHERE created_at < ?', $now - 400 * 86400],
             'audit_log' => ['DELETE FROM audit_log WHERE created_at < ?', $now - 400 * 86400],
             'room_mirrors' => ['DELETE FROM rooms WHERE expires_at < ? OR (ended_at IS NOT NULL AND ended_at < ?)', [$now - 30 * 86400, $now - 30 * 86400]],

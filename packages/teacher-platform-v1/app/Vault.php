@@ -71,17 +71,31 @@ SQL);
         $statement->execute([$scopeType, $scopeId, $kind]);
     }
 
-    public static function resolveOpenAiKey(array $user, ?int $organisationId = null): ?array
+    public static function resolveOpenAiKey(array $user, ?int $organisationId = null, string $moduleSlug = ''): ?array
     {
         $userId = (int)($user['id'] ?? 0);
         if ($userId > 0) {
             $key = self::get('user', $userId, 'openai_api_key');
-            if (is_string($key) && $key !== '') return ['key' => $key, 'scope' => 'user', 'scopeId' => $userId];
+            if (is_string($key) && $key !== '') return ['key' => $key, 'scope' => 'user', 'scopeId' => $userId, 'grantId' => null];
         }
         $organisationId = $organisationId ?: Auth::defaultOrganisationId($userId);
         if ($organisationId > 0) {
-            $key = self::get('organisation', $organisationId, 'openai_api_key');
-            if (is_string($key) && $key !== '') return ['key' => $key, 'scope' => 'organisation', 'scopeId' => $organisationId];
+            $membership = Database::connection()->prepare('SELECT o.monthly_request_limit FROM organisation_memberships m JOIN organisations o ON o.id=m.organisation_id WHERE m.user_id=? AND m.organisation_id=? AND o.status="active"');
+            $membership->execute([$userId, $organisationId]);
+            $monthlyLimit = $membership->fetchColumn();
+            if ($monthlyLimit !== false && (int)$monthlyLimit > 0) {
+                $startMonth = strtotime(date('Y-m-01 00:00:00')) ?: time() - 2678400;
+                $usage = Database::connection()->prepare('SELECT COUNT(*) FROM feedback_usage WHERE organisation_id=? AND key_scope="organisation" AND status="ok" AND created_at>?');
+                $usage->execute([$organisationId, $startMonth]);
+                $key = self::get('organisation', $organisationId, 'openai_api_key');
+                if ((int)$usage->fetchColumn() < (int)$monthlyLimit && is_string($key) && $key !== '') {
+                    return ['key' => $key, 'scope' => 'organisation', 'scopeId' => $organisationId, 'grantId' => null];
+                }
+            }
+        }
+        $grant = AiGrants::resolve($userId, $moduleSlug);
+        if (is_array($grant)) {
+            return ['key' => $grant['key'], 'scope' => 'grant', 'scopeId' => (int)$grant['id'], 'grantId' => (int)$grant['id']];
         }
         return null;
     }
@@ -94,4 +108,3 @@ SQL);
         if (!preg_match('/^[a-z][a-z0-9_]{1,60}$/', $kind)) throw new \InvalidArgumentException('Ungültiger Geheimnistyp.');
     }
 }
-

@@ -6,11 +6,11 @@
   var VIEW=CONFIG.view||window.RELIGION_VIEW||(document.body.classList.contains("beamer-view")||document.body.classList.contains("beamer")?"beamer":document.body.classList.contains("lehrer")||document.body.classList.contains("teacher-view")?"teacher":"student");
   var MODULE_ID=String(CONFIG.moduleId||"learning-html-module");
   var MODULE_LABEL=String(CONFIG.moduleLabel||document.title||"LernHTML");
-  var ROOM_KEY=String(CONFIG.roomStorageKey||MODULE_ID+"-classroom-room-v1"),ROOMS_KEY=String(CONFIG.roomsStorageKey||MODULE_ID+"-classroom-rooms-v1"),TEACHER_CODE_KEY=String(CONFIG.teacherCodeStorageKey||"learning-html-teacher-code-v1"),room=readLocal(ROOM_KEY)||"",pollTimer=null,current=null;
+  var ROOM_KEY=String(CONFIG.roomStorageKey||MODULE_ID+"-classroom-room-v1"),ROOMS_KEY=String(CONFIG.roomsStorageKey||MODULE_ID+"-classroom-rooms-v1"),TEACHER_CODE_KEY=String(CONFIG.teacherCodeStorageKey||"learning-html-teacher-code-v1"),MATERIAL_ACCESS_KEY=String(CONFIG.materialAccessStorageKey||MODULE_ID+"-course-access-v1"),room=readLocal(ROOM_KEY)||"",materialAccessKey=accessKeyClean(readLocal(MATERIAL_ACCESS_KEY)||""),pollTimer=null,current=null;
   var configuredStages=Array.isArray(CONFIG.releaseStages)?CONFIG.releaseStages:[];
   var RELEASE_STAGES=(configuredStages.length?configuredStages:["einstieg","fall","st1","st2","st3","st4","st5","sicherung","bilanz","check","weiterdenken"]).filter(function(id){var node=document.getElementById(id);return node&&node.tagName==="SECTION";}),releasePending="",releaseGate=null,releaseNavGuardInstalled=false;
-  var ROOM_PARAM=String(CONFIG.roomParam||"room"),ROOM_PARAM_ALIASES=Array.isArray(CONFIG.roomParamAliases)?CONFIG.roomParamAliases:["room","raum"];
-  try{var search=new URLSearchParams(location.search),linked=codeClean(search.get(ROOM_PARAM)||ROOM_PARAM_ALIASES.map(function(key){return search.get(key)||"";}).find(Boolean));if(linked.length===6){room=linked;writeLocal(ROOM_KEY,room);}}catch(e){}
+  var ROOM_PARAM=String(CONFIG.roomParam||"room"),ROOM_PARAM_ALIASES=Array.isArray(CONFIG.roomParamAliases)?CONFIG.roomParamAliases:["room","raum"],MATERIAL_ACCESS_PARAM=String(CONFIG.materialAccessParam||"zugang");
+  try{var search=new URLSearchParams(location.search),linked=codeClean(search.get(ROOM_PARAM)||ROOM_PARAM_ALIASES.map(function(key){return search.get(key)||"";}).find(Boolean)),linkedAccess=accessKeyClean(search.get(MATERIAL_ACCESS_PARAM));if(linked.length===6){room=linked;writeLocal(ROOM_KEY,room);}if(linkedAccess){materialAccessKey=linkedAccess;writeLocal(MATERIAL_ACCESS_KEY,materialAccessKey);search.delete(MATERIAL_ACCESS_PARAM);history.replaceState(null,"",location.pathname+(search.toString()?"?"+search.toString():"")+location.hash);}}catch(e){}
 
   var DEFAULT_POLLS=[
     {id:"ursprung",q:"Was ist der Ursprung der Welt?",o:["Gott","Der Urknall","Gott und Urknall","Ich weiß es nicht"],policy:"store"},
@@ -18,7 +18,7 @@
     {id:"wirklichkeit",q:"Was folgt daraus, dass Menschen dasselbe verschieden wahrnehmen?",o:["Eine Person muss sich irren.","Es gibt keine gemeinsame Wirklichkeit.","Wahrnehmung ist gefiltert – trotzdem können wir gemeinsam prüfen.","Nur Messbares ist wirklich."],policy:"beamer"}
   ];
   var POLLS=(Array.isArray(CONFIG.polls)?CONFIG.polls:DEFAULT_POLLS).map(function(poll){return {id:String(poll.id||""),q:String(poll.q||poll.question||""),o:Array.isArray(poll.o)?poll.o.slice():Array.isArray(poll.options)?poll.options.slice():[],policy:poll.policy==="beamer"?"beamer":"store"};}).filter(function(poll){return poll.id&&poll.q&&poll.o.length>=2;});
-  var CARD_WALLS=(Array.isArray(CONFIG.cardWalls)?CONFIG.cardWalls:[]).map(function(wall){var categories=(Array.isArray(wall.categories)?wall.categories:[]).map(function(category,index){if(typeof category==="string")return{id:"c"+(index+1),label:category};return{id:String(category.id||("c"+(index+1))),label:String(category.label||category.title||category.id||("Kategorie "+(index+1)))};}).filter(function(category){return/^[A-Za-z0-9_-]{1,80}$/.test(category.id)&&category.label;});return{id:String(wall.id||""),title:String(wall.title||"Gemeinsame Kartenwand"),prompt:String(wall.prompt||"Formuliere einen kurzen Gedanken."),categories:categories};}).filter(function(wall){return/^[A-Za-z0-9_-]{1,80}$/.test(wall.id)&&wall.categories.length>=2;});
+  var CARD_WALLS=(Array.isArray(CONFIG.cardWalls)?CONFIG.cardWalls:[]).map(function(wall){var categories=(Array.isArray(wall.categories)?wall.categories:[]).map(function(category,index){if(typeof category==="string")return{id:"c"+(index+1),label:category};return{id:String(category.id||("c"+(index+1))),label:String(category.label||category.title||category.id||("Kategorie "+(index+1)))};}).filter(function(category){return/^[A-Za-z0-9_-]{1,80}$/.test(category.id)&&category.label;});return{id:String(wall.id||""),title:String(wall.title||"Gemeinsame Kartenwand"),prompt:String(wall.prompt||"Formuliere einen kurzen Gedanken."),categories:categories};}).filter(function(wall){return/^[A-Za-z0-9_-]{1,80}$/.test(wall.id)&&wall.categories.length>=1;});
   var MANAGER_SELECTOR=String(CONFIG.managerSelector||"[data-classroom-manager],#live-room-management-anchor,[data-live-room-root]");
   var JOIN_SELECTOR=String(CONFIG.joinSelector||"[data-classroom-join],[data-live-join]");
   var PUBLIC_ACTIVITY_SELECTOR=".live-inline-anchor[data-live-poll],[data-live-poll-host],[data-classroom-poll],[data-classroom-quiz]";
@@ -41,6 +41,7 @@
   function letters(i){return String.fromCharCode(65+i);}
   function total(counts){return (counts||[]).reduce(function(sum,n){return sum+Number(n||0);},0);}
   function codeClean(value){return String(value||"").toUpperCase().replace(/[^A-Z2-9]/g,"").slice(0,6);}
+  function accessKeyClean(value){value=String(value||"").trim().toLowerCase();return /^[a-f0-9]{48}$/.test(value)?value:"";}
   function classPolls(){try{return typeof window.RELIGION_GET_CLASS_CHECK_POLLS==="function"?window.RELIGION_GET_CLASS_CHECK_POLLS():[];}catch(e){return [];}}
   function normalizeCheck(check,index){check=check||{};var questions=Array.isArray(check.questions)?check.questions:[];return {id:String(check.id||("class-check"+(index?"-"+(index+1):""))),title:String(check.title||"Klassencheck · "+questions.length+" Aufgaben"),durationSeconds:Math.max(10,Number(check.durationSeconds||300)),questions:questions.map(function(q,qi){var options=Array.isArray(q.o)?q.o.slice():Array.isArray(q.options)?q.options.slice():[];var correctIndex=Number.isInteger(Number(q.correctIndex))?Number(q.correctIndex):Math.max(0,options.indexOf(q.correct));return {id:String(q.id||"q"+(qi+1)),q:String(q.q||q.question||""),o:options,correctIndex:correctIndex,correct:String(q.correct||options[correctIndex]||""),insight:String(q.insight||"")};})};}
   function classChecks(){try{var raw=[];if(typeof window.RELIGION_GET_CLASS_CHECKS==="function")raw=window.RELIGION_GET_CLASS_CHECKS()||[];else if(Array.isArray(CONFIG.classChecks))raw=CONFIG.classChecks;else if(typeof window.RELIGION_GET_CLASS_CHECK==="function")raw=[window.RELIGION_GET_CLASS_CHECK()];else{var questions=classPolls();if(questions.length)raw=[{id:"class-check",title:"Klassencheck · "+questions.length+" Aufgaben",durationSeconds:300,questions:questions}];}return (Array.isArray(raw)?raw:[]).map(normalizeCheck).filter(function(check){return check.id&&check.questions.length;});}catch(e){return [];}}
@@ -95,11 +96,12 @@
     return '<div class="live-quiz-overview">'+poll.questions.map(function(question,index){var n=total(question.counts),correct=Number(question.correctIndex),count=correct>=0?Number((question.counts||[])[correct]||0):0,percent=n?Math.round(count*100/n):0;return '<article><span>Aufgabe '+(index+1)+'</span><strong>'+percent+' %</strong><small>richtig · '+n+' Antworten</small></article>';}).join("")+'</div><p class="live-total">'+submissions+' vollständige '+(submissions===1?'Abgabe':'Abgaben')+'</p>';
   }
   function roomTitle(data){var label=String(data&&data.label||"").trim();return label?label+" · "+String(data.room||room):String(data&&data.room||room);}
-  function lessonLink(){var url=new URL(CONFIG.studentUrl||window.RELIGION_PUBLIC_URL||location.pathname,location.origin);ROOM_PARAM_ALIASES.forEach(function(key){if(key!==ROOM_PARAM)url.searchParams.delete(key);});if(room)url.searchParams.set(ROOM_PARAM,room);return url.toString();}
-  function beamerLink(){var url=new URL(CONFIG.beamerUrl||window.RELIGION_BEAMER_URL||"beamer/",location.origin);ROOM_PARAM_ALIASES.forEach(function(key){if(key!==ROOM_PARAM)url.searchParams.delete(key);});if(room)url.searchParams.set(ROOM_PARAM,room);return url.toString();}
+  function lessonLink(){var url=new URL(CONFIG.studentUrl||window.RELIGION_PUBLIC_URL||location.pathname,location.origin);ROOM_PARAM_ALIASES.forEach(function(key){if(key!==ROOM_PARAM)url.searchParams.delete(key);});if(room)url.searchParams.set(ROOM_PARAM,room);if(materialAccessKey)url.searchParams.set(MATERIAL_ACCESS_PARAM,materialAccessKey);return url.toString();}
+  function beamerLink(){var url=new URL(CONFIG.beamerUrl||window.RELIGION_BEAMER_URL||"beamer/",location.origin);ROOM_PARAM_ALIASES.forEach(function(key){if(key!==ROOM_PARAM)url.searchParams.delete(key);});if(room)url.searchParams.set(ROOM_PARAM,room);if(materialAccessKey)url.searchParams.set(MATERIAL_ACCESS_PARAM,materialAccessKey);return url.toString();}
   function timerRemainingMs(state){if(!state)return 0;if(state.running&&state.endsAt)return Math.max(0,Number(state.endsAt)*1000-Date.now());return Math.max(0,Number(state.remaining||0)*1000);}
   function timerText(ms){var seconds=Math.max(0,Math.ceil(Number(ms||0)/1000)),minutes=Math.floor(seconds/60),rest=seconds%60;return String(minutes).padStart(2,"0")+":"+String(rest).padStart(2,"0");}
-  function announceState(data){current=data||current;try{var detail={room:room,data:current,moduleId:MODULE_ID};document.dispatchEvent(new CustomEvent("religion-classroom-state",{detail:detail}));document.dispatchEvent(new CustomEvent("religion11-live-state",{detail:detail}));var timerDetail={room:room,timer:current&&current.timer||null,remainingMs:timerRemainingMs(current&&current.timer),moduleId:MODULE_ID};document.dispatchEvent(new CustomEvent("religion-classroom-timer-state",{detail:timerDetail}));document.dispatchEvent(new CustomEvent("religion11-timer-state",{detail:timerDetail}));}catch(e){}}
+  function syncMaterialAccess(data){var value=accessKeyClean(data&&data.materialAccessKey);if(value){materialAccessKey=value;writeLocal(MATERIAL_ACCESS_KEY,value);}}
+  function announceState(data){current=data||current;syncMaterialAccess(current);try{var detail={room:room,data:current,moduleId:MODULE_ID};document.dispatchEvent(new CustomEvent("religion-classroom-state",{detail:detail}));document.dispatchEvent(new CustomEvent("religion11-live-state",{detail:detail}));var timerDetail={room:room,timer:current&&current.timer||null,remainingMs:timerRemainingMs(current&&current.timer),moduleId:MODULE_ID};document.dispatchEvent(new CustomEvent("religion-classroom-timer-state",{detail:timerDetail}));document.dispatchEvent(new CustomEvent("religion11-timer-state",{detail:timerDetail}));}catch(e){}}
 
   function initSharedTimer(){
     var display=document.createElement("aside");display.className="live-shared-timer";display.hidden=true;display.setAttribute("aria-label","Gemeinsamer Unterrichtstimer");
@@ -227,7 +229,7 @@
     function renderQr(){if(!room){qrCard.hidden=true;qrBox.innerHTML="";return;}qrCard.hidden=false;qrCard.open=true;publicLink.href=lessonLink();makeQr(qrBox,lessonLink());}
     var managerInside=false,lastAutoJoinRoom="",managerJoinFrame=0;
     function managerVisible(){var rect=box.getBoundingClientRect(),header=document.querySelector("header,.site-header,.topbar"),headerBottom=header?Math.max(0,header.getBoundingClientRect().bottom):0;return rect.bottom>headerBottom+80&&rect.top<innerHeight*0.88;}
-    function autoShowManagerJoin(force){managerJoinFrame=0;var visible=managerVisible(),join={room:room,label:current&&current.label||"",url:lessonLink()};try{document.dispatchEvent(new CustomEvent("religion-classroom-manager-visibility",{detail:{visible:Boolean(visible&&room),room:room,join:join,moduleId:MODULE_ID}}));}catch(e){}if(visible&&room&&(force||!managerInside||lastAutoJoinRoom!==room)){if(window.RELIGION_BEAMER_JOIN&&typeof window.RELIGION_BEAMER_JOIN.show==="function"){window.RELIGION_BEAMER_JOIN.show(join);lastAutoJoinRoom=room;}}managerInside=visible;}
+    function autoShowManagerJoin(force){managerJoinFrame=0;var visible=managerVisible(),join={room:room,label:current&&current.label||"",url:lessonLink(),openBeamer:false};try{document.dispatchEvent(new CustomEvent("religion-classroom-manager-visibility",{detail:{visible:Boolean(visible&&room),room:room,join:join,moduleId:MODULE_ID}}));}catch(e){}if(visible&&room&&(force||!managerInside||lastAutoJoinRoom!==room)){if(window.RELIGION_BEAMER_JOIN&&typeof window.RELIGION_BEAMER_JOIN.show==="function"){window.RELIGION_BEAMER_JOIN.show(join);lastAutoJoinRoom=room;}}managerInside=visible;}
     function scheduleManagerJoin(force){if(managerJoinFrame)cancelAnimationFrame(managerJoinFrame);managerJoinFrame=requestAnimationFrame(function(){autoShowManagerJoin(Boolean(force));});}
     function savedRooms(){if(Array.isArray(serverRooms))return serverRooms.filter(function(item){return item&&codeClean(item.code).length===6&&Number(item.expiresAt||0)>Date.now()/1000;});try{var parsed=JSON.parse(readLocal(ROOMS_KEY)||"[]");if(!Array.isArray(parsed))return [];return parsed.filter(function(item){return item&&codeClean(item.code).length===6&&Number(item.expiresAt||0)>Date.now()/1000;});}catch(e){return [];}}
     function saveRooms(items){writeLocal(ROOMS_KEY,items.length?JSON.stringify(items.slice(0,20)):"");}
@@ -305,8 +307,13 @@
     addEventListener("resize",function(){inlineHosts.forEach(fitHost);});refresh();startPolling(refresh,1800);
   }
 
+  window.RELIGION_COURSE_MATERIALS={
+    setAccess:function(value){materialAccessKey=accessKeyClean(value);writeLocal(MATERIAL_ACCESS_KEY,materialAccessKey);},
+    state:function(){return {room:room,accessKey:materialAccessKey,releasedStage:current&&current.releasedStage||""};},
+    load:function(materialId){if(!room)return Promise.reject(new Error("Bitte zuerst dem Klassenraum beitreten."));if(!materialAccessKey)return Promise.reject(new Error("Bitte den vollständigen Schülerlink oder QR-Code der Lehrkraft verwenden."));return request("course_material",{room:room,materialId:String(materialId||""),accessKey:materialAccessKey});}
+  };
   window.RELIGION_CLASSROOM={
-    version:"1.3.0",
+    version:"1.5.0",
     config:CONFIG,
     request:request,
     room:function(){return room;},
@@ -314,7 +321,7 @@
     studentUrl:lessonLink,
     beamerUrl:beamerLink,
     setRoom:function(value){var code=codeClean(value);if(code.length!==6)return false;room=code;writeLocal(ROOM_KEY,room);return true;},
-    clearRoom:function(){room="";current=null;writeLocal(ROOM_KEY,"");announceState(null);},
+    clearRoom:function(){room="";current=null;materialAccessKey="";writeLocal(ROOM_KEY,"");writeLocal(MATERIAL_ACCESS_KEY,"");announceState(null);},
     announce:announceState,
     escape:esc,
     codeClean:codeClean

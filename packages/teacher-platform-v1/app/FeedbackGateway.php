@@ -13,7 +13,7 @@ final class FeedbackGateway
         if (!$task) return ['available' => false, 'reason' => 'Für diese Aufgabe ist kein geprüftes Feedbackraster hinterlegt.'];
         if (empty($room['ai_feedback_enabled'])) return ['available' => false, 'reason' => 'Die Lehrkraft hat KI-Feedback für diesen Raum nicht freigeschaltet.'];
         $owner = self::owner((int)$room['owner_user_id']);
-        if (!$owner || !Vault::resolveOpenAiKey($owner, (int)($room['organisation_id'] ?? 0))) {
+        if (!$owner || !Vault::resolveOpenAiKey($owner, (int)($room['organisation_id'] ?? 0), (string)$room['module_slug'])) {
             return ['available' => false, 'reason' => 'Für diesen Raum ist kein API-Zugang verfügbar.'];
         }
         return [
@@ -44,14 +44,14 @@ final class FeedbackGateway
         if ($clientId === '') throw new \RuntimeException('Der anonyme Browsernachweis fehlt. Bitte die Seite neu laden.');
         $owner = self::owner((int)$room['owner_user_id']);
         if (!$owner) throw new \RuntimeException('Die zugehörige Lehrkraft ist nicht aktiv.');
-        $key = Vault::resolveOpenAiKey($owner, (int)($room['organisation_id'] ?? 0));
+        $key = Vault::resolveOpenAiKey($owner, (int)($room['organisation_id'] ?? 0), (string)$room['module_slug']);
         if (!$key) throw new \RuntimeException('Für diesen Raum ist kein API-Zugang verfügbar.');
         $studentHash = hash_hmac('sha256', $roomCode . '|' . $clientId . '|' . Security::clientIpHash('feedback'), Vault::masterKey());
-        self::enforceLimits($room, $studentHash, $taskId);
+        self::enforceLimits($room, $studentHash, $taskId, $key);
         $started = hrtime(true);
         try {
             $result = OpenAiFeedback::generate((string)$key['key'], $task, $answer, $studentHash);
-            self::logUsage($room, $taskId, (string)$key['scope'], (string)$result['model'], 'ok', (int)$result['input_tokens'], (int)$result['output_tokens'], (int)$result['latency_ms'], $studentHash);
+            self::logUsage($room, $taskId, $key, (string)$result['model'], 'ok', (int)$result['input_tokens'], (int)$result['output_tokens'], (int)$result['latency_ms'], $studentHash);
             return [
                 'feedback' => $result['feedback'],
                 'operator' => $task['operator'],
@@ -60,12 +60,12 @@ final class FeedbackGateway
             ];
         } catch (\Throwable $error) {
             $latency = (int)((hrtime(true) - $started) / 1_000_000);
-            self::logUsage($room, $taskId, (string)$key['scope'], (string)Config::get('openai_model', 'gpt-5-mini'), 'error', 0, 0, $latency, $studentHash);
+            self::logUsage($room, $taskId, $key, (string)Config::get('openai_model', 'gpt-5-mini'), 'error', 0, 0, $latency, $studentHash);
             throw $error;
         }
     }
 
-    private static function enforceLimits(array $room, string $studentHash, string $taskId): void
+    private static function enforceLimits(array $room, string $studentHash, string $taskId, array $key): void
     {
         $db = Database::connection();
         $sinceHour = time() - 3600;
@@ -79,25 +79,38 @@ final class FeedbackGateway
         $roomUsage->execute([$room['code'], time() - 86400]);
         if ((int)$roomUsage->fetchColumn() >= (int)$room['ai_request_limit']) throw new \RuntimeException('Das Tageskontingent dieses Raums ist ausgeschöpft.');
         $orgId = (int)($room['organisation_id'] ?? 0);
-        if ($orgId > 0) {
+        if ($orgId > 0 && ($key['scope'] ?? '') === 'organisation') {
             $startMonth = strtotime(date('Y-m-01 00:00:00')) ?: time() - 2678400;
-            $org = $db->prepare('SELECT COUNT(*) FROM feedback_usage WHERE organisation_id=? AND status="ok" AND created_at>?');
+            $org = $db->prepare('SELECT COUNT(*) FROM feedback_usage WHERE organisation_id=? AND key_scope="organisation" AND status="ok" AND created_at>?');
             $org->execute([$orgId, $startMonth]);
             $limit = $db->prepare('SELECT monthly_request_limit FROM organisations WHERE id=?');
             $limit->execute([$orgId]);
-            if ((int)$org->fetchColumn() >= (int)($limit->fetchColumn() ?: Config::get('feedback_org_month_limit', 2000))) {
+            $configuredLimit = $limit->fetchColumn();
+            $monthlyLimit = $configuredLimit === false ? (int)Config::get('feedback_org_month_limit', 2000) : (int)$configuredLimit;
+            if ($monthlyLimit <= 0) throw new \RuntimeException('Das Organisationskontingent ist deaktiviert.');
+            if ((int)$org->fetchColumn() >= $monthlyLimit) {
                 throw new \RuntimeException('Das Monatskontingent der Organisation ist ausgeschöpft.');
+            }
+        }
+        if (($key['scope'] ?? '') === 'grant') {
+            $grant = AiGrants::resolve((int)$room['owner_user_id'], (string)$room['module_slug']);
+            if (!$grant || (int)$grant['id'] !== (int)($key['grantId'] ?? 0)) {
+                throw new \RuntimeException('Das Förderkontingent ist abgelaufen oder ausgeschöpft.');
+            }
+            if (!AiGrants::reserveRequest((int)$grant['id'])) {
+                throw new \RuntimeException('Das Förderkontingent ist abgelaufen oder ausgeschöpft.');
             }
         }
     }
 
-    private static function logUsage(array $room, string $taskId, string $scope, string $model, string $status, int $input, int $output, int $latency, string $studentHash): void
+    private static function logUsage(array $room, string $taskId, array $key, string $model, string $status, int $input, int $output, int $latency, string $studentHash): void
     {
-        $statement = Database::connection()->prepare('INSERT INTO feedback_usage(room_code,module_slug,task_id,owner_user_id,organisation_id,key_scope,model,status,input_tokens,output_tokens,latency_ms,student_hash,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)');
-        $statement->execute([$room['code'], $room['module_slug'], $taskId, $room['owner_user_id'], $room['organisation_id'], $scope, $model, $status, $input, $output, $latency, $studentHash, time()]);
+        $statement = Database::connection()->prepare('INSERT INTO feedback_usage(room_code,module_slug,task_id,owner_user_id,organisation_id,key_scope,model,status,input_tokens,output_tokens,latency_ms,student_hash,created_at,grant_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
+        $statement->execute([$room['code'], $room['module_slug'], $taskId, $room['owner_user_id'], $room['organisation_id'], (string)$key['scope'], $model, $status, $input, $output, $latency, $studentHash, time(), $key['grantId'] ?? null]);
         if ($status === 'ok') {
             $update = Database::connection()->prepare('UPDATE rooms SET ai_request_count=ai_request_count+1,updated_at=? WHERE code=?');
             $update->execute([time(), $room['code']]);
+            AiGrants::recordTokens((int)($key['grantId'] ?? 0), $input + $output);
         }
     }
 

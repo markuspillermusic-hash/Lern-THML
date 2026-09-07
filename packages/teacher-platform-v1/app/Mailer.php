@@ -22,7 +22,7 @@ final class Mailer
             'username' => Security::clean($input['username'] ?? '', 190),
             'password' => (string)($input['password'] ?? ''),
             'from_email' => strtolower(Security::clean($input['from_email'] ?? '', 190)),
-            'from_name' => Security::clean($input['from_name'] ?? 'LernHTML', 100),
+            'from_name' => Security::clean($input['from_name'] ?? 'Religionsunterricht', 100),
             'notify_to' => strtolower(Security::clean($input['notify_to'] ?? '', 190)),
         ];
         if ($config['host'] === '' || !filter_var($config['from_email'], FILTER_VALIDATE_EMAIL) || !filter_var($config['notify_to'], FILTER_VALIDATE_EMAIL)) {
@@ -36,14 +36,62 @@ final class Mailer
         Settings::set('mail.mode', 'smtp');
     }
 
+    public static function saveIdentity(array $input): void
+    {
+        $from = strtolower(Security::clean($input['from_email'] ?? '', 190));
+        $name = Security::clean($input['from_name'] ?? '', 100);
+        $notify = strtolower(Security::clean($input['notify_to'] ?? '', 190));
+        if (!filter_var($from, FILTER_VALIDATE_EMAIL) || $name === '' || !filter_var($notify, FILTER_VALIDATE_EMAIL)) {
+            throw new \RuntimeException('Absender, Absendername und Benachrichtigungsadresse müssen vollständig und gültig sein.');
+        }
+        Settings::set('mail.from_email', $from);
+        Settings::set('mail.from_name', $name);
+        Settings::set('mail.notify_to', $notify);
+        if (Vault::has('system', 0, 'smtp_config')) {
+            $smtp = self::smtpConfig();
+            $smtp['from_email'] = $from;
+            $smtp['from_name'] = $name;
+            $smtp['notify_to'] = $notify;
+            Vault::put('system', 0, 'smtp_config', json_encode($smtp, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        }
+    }
+
     public static function recipient(): string
     {
         $mode = Settings::get('mail.mode', (string)Config::get('mail_mode', 'sendmail'));
-        if ($mode === 'smtp') {
-            $config = self::smtpConfig();
-            return (string)($config['notify_to'] ?? '');
+        if ($mode === 'smtp' && Vault::has('system', 0, 'smtp_config')) {
+            try {
+                $config = self::smtpConfig();
+                return (string)($config['notify_to'] ?? '');
+            } catch (\Throwable) {
+                return (string)Config::get('contact_recipient', '');
+            }
         }
-        return (string)Config::get('contact_recipient', '');
+        return (string)Settings::get('mail.notify_to', (string)Config::get('contact_recipient', ''));
+    }
+
+    /** @return array<string,mixed> */
+    public static function summary(): array
+    {
+        $mode = Settings::get('mail.mode', (string)Config::get('mail_mode', 'sendmail'));
+        if ($mode === 'smtp' && Vault::has('system', 0, 'smtp_config')) {
+            $config = self::smtpConfig();
+            unset($config['password']);
+            $config['mode'] = 'smtp';
+            $config['has_password'] = true;
+            return $config;
+        }
+        return [
+            'mode' => $mode,
+            'host' => '',
+            'port' => 587,
+            'encryption' => 'tls',
+            'username' => '',
+            'from_email' => (string)Settings::get('mail.from_email', (string)Config::get('mail_from', 'lern-html-lehrerzugang@markuspiller.de')),
+            'from_name' => (string)Settings::get('mail.from_name', 'Religionsunterricht · Lehrerplattform'),
+            'notify_to' => (string)Settings::get('mail.notify_to', (string)Config::get('contact_recipient', 'markus.piller@jmf-gymnasium.de')),
+            'has_password' => false,
+        ];
     }
 
     public static function send(string $to, string $subject, string $text): void
@@ -64,9 +112,11 @@ final class Mailer
     {
         $path = (string)Config::get('sendmail_path', '/usr/sbin/sendmail');
         if (!is_executable($path)) throw new \RuntimeException('Sendmail ist nicht verfügbar.');
-        $from = (string)Config::get('mail_from', 'noreply@example.invalid');
-        $message = self::message($to, $subject, $text, $from, (string)Config::get('mail_from_name', 'LernHTML'));
-        $process = proc_open([$path, '-t', '-i'], [['pipe', 'r'], ['pipe', 'w'], ['pipe', 'w']], $pipes);
+        $from = (string)Settings::get('mail.from_email', (string)Config::get('mail_from', 'lern-html-lehrerzugang@markuspiller.de'));
+        $fromName = (string)Settings::get('mail.from_name', 'Religionsunterricht · Lehrerplattform');
+        if (!filter_var($from, FILTER_VALIDATE_EMAIL)) throw new \RuntimeException('Die Absenderadresse ist ungültig.');
+        $message = self::message($to, $subject, $text, $from, $fromName);
+        $process = proc_open([$path, '-t', '-i', '-f', $from], [['pipe', 'r'], ['pipe', 'w'], ['pipe', 'w']], $pipes);
         if (!is_resource($process)) throw new \RuntimeException('Der Mailprozess konnte nicht gestartet werden.');
         fwrite($pipes[0], $message);
         fclose($pipes[0]);
@@ -95,15 +145,14 @@ final class Mailer
         if (!is_resource($socket)) throw new \RuntimeException('SMTP-Verbindung fehlgeschlagen.');
         stream_set_timeout($socket, 15);
         self::expect($socket, [220]);
-        $helo = (string)Config::get('mail_helo', 'example.invalid');
-        self::command($socket, 'EHLO ' . $helo, [250]);
+        self::command($socket, 'EHLO markuspiller.de', [250]);
         if ($encryption === 'tls') {
             self::command($socket, 'STARTTLS', [220]);
             if (!stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
                 fclose($socket);
                 throw new \RuntimeException('SMTP-TLS konnte nicht aktiviert werden.');
             }
-            self::command($socket, 'EHLO ' . $helo, [250]);
+            self::command($socket, 'EHLO markuspiller.de', [250]);
         }
         $username = (string)($config['username'] ?? '');
         $password = (string)($config['password'] ?? '');
@@ -149,7 +198,7 @@ final class Mailer
             'To: <' . $to . '>',
             'Subject: ' . self::encoded($subject),
             'Date: ' . date(DATE_RFC2822),
-            'Message-ID: <' . bin2hex(random_bytes(12)) . '@' . (string)Config::get('message_id_domain', 'example.invalid') . '>',
+            'Message-ID: <' . bin2hex(random_bytes(12)) . '@markuspiller.de>',
             'MIME-Version: 1.0',
             'Content-Type: text/plain; charset=UTF-8',
             'Content-Transfer-Encoding: 8bit',

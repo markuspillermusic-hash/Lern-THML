@@ -66,6 +66,8 @@ Ein Build ist erst veröffentlichungsfähig, wenn Rollenbereinigung, Passwort-/S
 
 Seit v1.2.4 gilt zusätzlich: Die feste Lehrerleiste bleibt einzeilig und höhenstabil; ihr Timerfenster wird als nicht abgeschnittenes Overlay gerendert und unabhängig von der großen Raumverwaltung live geprüft. Scrollbefehle werden gedrosselt und zusammengefasst, Ankerwechsel besitzen eine Richtungshysterese, und der Beamer nähert sich fortlaufenden Zielpositionen mit begrenzter Bewegung pro Bildwiederholung und weichem Auslaufen an.
 
+Seit v1.2.5 kann der Präsentationszustand außerdem Lehrermarkierungen als stabile Text-ID, Zeichenoffsets und Farbe spiegeln. Persönliche Schülermarkierungen bleiben lokal. Ein Abfragemodul wird über einen eigenen Präsentationsanker gesteuert und darf nicht Bestandteil der linearen Schülerfreigabe sein.
+
 Seit v1.2.5 ist auch die optionale Kopfzeile der Schüleransicht einklappbar; der Zustand wird getrennt von der Lehreransicht gespeichert. Neue Räume bleiben standardmäßig 42 Tage geöffnet. Jede Änderung am gemeinsamen Kern erzwingt eine neue, in allen Lernseiten identische Cache-Version.
 
 Seit v1.3.0 kann ein Modul an die zentrale Lehrerplattform angebunden werden. Die Lehrerroute verwendet dann die zentrale Sitzung, neue Räume werden einem Konto gespiegelt und KI-Feedback wird ausschließlich über serverseitig registrierte Aufgaben und den verschlüsselten Konto-/Organisationstresor freigegeben. Seitenspezifische Passwort- oder Schlüsselverwaltung ist in diesem Modus unzulässig.
