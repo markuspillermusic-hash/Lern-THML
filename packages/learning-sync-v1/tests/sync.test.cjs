@@ -14,7 +14,9 @@ async function harness(){
   const local={exportState:()=>clone(state),importState:p=>{state=clone(p);scopes.set(scope,clone(state));},setStorageScope:s=>{scopes.set(scope,clone(state));scope=s;state=clone(scopes.get(s)||{version:2,moduleId:'qa',fields:{},ui:{}});}};
   const session={authenticated:true,kind:'student',learning_enabled:true,subject:'qa-student',name:'QA',csrf:'test',assignments:['A','B'].map(id=>({id,status:'active',teacher_name:'QA Lehrkraft',class_label:'QA Klasse',label:id}))};
   const node=(...args)=>{const n=new Element(...args);nodes.push(n);return n;};
-  const window={RELIGION_CLASSROOM_CONFIG:{moduleSlug:'qa',view:'student'},RELIGION_LEARNING_STATE:local,LearningWorkRenderer:{node},addEventListener:()=>{}};
+  let room='',accessKey='';
+  const window={RELIGION_CLASSROOM_CONFIG:{moduleSlug:'qa',view:'student'},RELIGION_LEARNING_STATE:local,LearningWorkRenderer:{node},addEventListener:()=>{},
+    RELIGION_CLASSROOM:{room:()=>room,setRoom:value=>{room=value;},clearRoom:()=>{room='';}},RELIGION_COURSE_MATERIALS:{setAccess:value=>{accessKey=value;}}};
   const document={querySelector:s=>s==='main'?main:null,body:new Element('body'),addEventListener:(k,fn)=>{events[k]=fn;}};
   async function fetch(url,options){const input=options.method==='POST'?JSON.parse(options.body):Object.fromEntries(new URL(url,'https://qa.invalid').searchParams);
     if(input.action==='session')return{ok:true,json:async()=>clone(session)};
@@ -24,7 +26,7 @@ async function harness(){
   }
   vm.runInNewContext(code,{window,document,fetch,URLSearchParams,location:{protocol:'https:',pathname:'/qa/',search:'?arbeit=A'},localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},setTimeout:()=>1,clearTimeout:()=>{},setInterval:fn=>intervals.push(fn),confirm:()=>confirmResult,console});
   await tick();await tick();
-  return{nodes,storage,session,intervals,pending,posts,local,get scope(){return scope;},edit:v=>{state.fields.answer=v;events['religion-learning-state-change']();},confirm:v=>confirmResult=v};
+  return{nodes,storage,session,intervals,pending,posts,local,get scope(){return scope;},get room(){return room;},get accessKey(){return accessKey;},edit:v=>{state.fields.answer=v;events['religion-learning-state-change']();},confirm:v=>confirmResult=v};
 }
 test('late save from assignment A never changes revision or fields of assignment B',async()=>{
   const h=await harness(),select=h.nodes.find(n=>n.tag==='select'),sync=h.nodes.find(n=>n.textContent==='Jetzt synchronisieren');
@@ -40,4 +42,23 @@ test('cancelled or empty assignment selection keeps the visible selector aligned
 });
 test('expired account hides personal state and disables stale assignment controls',async()=>{
   const h=await harness(),select=h.nodes.find(n=>n.tag==='select');h.session.authenticated=false;await h.intervals[0]();assert.equal(h.scope,'');assert.equal(select.disabled,true);assert.deepEqual(h.local.exportState().fields,{});
+});
+test('changed teaching room and material ticket are adopted without replacing personal answers',async()=>{
+  const h=await harness();h.session.assignments[0].room_code='ABC234';h.session.assignments[0].material_access_key='ticket-a';await h.intervals[0]();
+  assert.equal(h.room,'ABC234');assert.equal(h.accessKey,'ticket-a');
+  h.session.assignments[0].room_code='DEF567';h.session.assignments[0].material_access_key='ticket-b';await h.intervals[0]();
+  assert.equal(h.room,'DEF567');assert.equal(h.accessKey,'ticket-b');assert.equal(h.local.exportState().fields.answer,'A remote');
+  h.session.assignments[0].room_code=null;h.session.assignments[0].material_access_key='';await h.intervals[0]();assert.equal(h.room,'');assert.equal(h.accessKey,'');
+});
+test('revoked class assignment hides personal fields and clears its live access',async()=>{
+  const h=await harness();h.session.assignments[0].room_code='ABC234';h.session.assignments[0].material_access_key='ticket-a';await h.intervals[0]();
+  h.edit('unsynced personal note');h.session.assignments=[];await h.intervals[0]();
+  assert.equal(h.scope,'');assert.deepEqual(h.local.exportState().fields,{});assert.equal(h.room,'');assert.equal(h.accessKey,'');
+  h.nodes.find(n=>n.textContent==='Jetzt synchronisieren').onclick();await tick();assert.equal(h.posts.length,0);
+  h.local.setStorageScope('qa-student:A');assert.equal(h.local.exportState().fields.answer,'unsynced personal note');
+});
+test('archived class stops autosaving, reactivation resumes pending edits',async()=>{
+  const h=await harness();h.session.assignments[0].class_status='archived';await h.intervals[0]();h.edit('archived draft');
+  h.nodes.find(n=>n.textContent==='Jetzt synchronisieren').onclick();await tick();assert.equal(h.posts.length,0);
+  h.session.assignments[0].class_status='active';await h.intervals[0]();await tick();assert.equal(h.posts.length,1);assert.equal(h.posts[0].payload.fields.answer,'archived draft');
 });

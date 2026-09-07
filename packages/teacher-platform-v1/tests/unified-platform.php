@@ -220,6 +220,7 @@ check(!in_array((int)$learning['id'],array_column(SchoolDirectory::teacherCandid
 SchoolDirectory::setTeacher($admin,$class['id'],(int)$learning['id'],null);
 check(!in_array((int)$learning['id'],array_column(SchoolDirectory::teachers($admin,$class['id']),'id'),true),'admin can remove the assignment of a suspended teacher');
 SchoolDirectory::updateClass($both,$class['id'],'13 Religion renamed','2026/27','archived');
+check(ReligionPlatform\LearningWork::assignments($workStudent,$slug)[0]['class_status']==='archived','student session communicates archived class state to the adapter');
 rejects(fn()=>SchoolDirectory::createLearner($both,$class['id'],'No new person','13R02',2,['learning']),'archived class cannot create learners');
 SchoolDirectory::updateClass($both,$class['id'],'13 Religion','2026/27','active');
 SchoolDirectory::setLearnerMembership($admin,$class['id'],$student['subject'],1,false);
@@ -227,6 +228,9 @@ rejects(fn()=>ReligionPlatform\LearningWork::read($workStudent,$assignment),'rem
 check(ReligionPlatform\LearningWork::read($workTeacher,$assignment,$student['subject'])['revision']===2,'removing a class membership preserves the previous work for its teachers');
 SchoolDirectory::setLearnerMembership($admin,$class['id'],$student['subject'],1,true);
 check(ReligionPlatform\LearningWork::read($workStudent,$assignment)['revision']===2,'reactivation retains the same identity and work');
+$db->prepare('UPDATE rooms SET ended_at=? WHERE code="ABC234"')->execute([time()]);
+$detached=ReligionPlatform\LearningWork::assignments($workStudent,$slug)[0];
+check($detached['room_code']===null && $detached['material_access_key']==='' && ReligionPlatform\LearningWork::read($workStudent,$assignment)['revision']===2,'ending live teaching detaches access without deleting personal work');
 Auth::login('assessment','A long test password 2026');
 check(Auth::currentUser()===null && Auth::currentUser(null)!==null && Identity::current()['role']==='teacher','assessment-only login cannot enter legacy lesson adapters but stays signed into shared portal');
 rejects(fn()=>Identity::setAccountStatus($both,'active',subject:$l['subject']),'ordinary teacher cannot reactivate accounts');

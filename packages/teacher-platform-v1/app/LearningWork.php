@@ -21,13 +21,17 @@ final class LearningWork
     {
         $fresh=Identity::find($identity['subject']);
         if(!$fresh || !Identity::allows($fresh,'learning')) return [];
-        $sql='SELECT a.*,c.label AS class_label,c.school_year,c.organisation_id,m.label AS module_label,m.public_url,u.display_name AS teacher_name FROM learning_assignments a JOIN platform_classes c ON c.id=a.class_id JOIN modules m ON m.slug=a.module_slug JOIN users u ON u.id=a.created_by WHERE a.retain_until>?';
+        $sql='SELECT a.*,c.label AS class_label,c.status AS class_status,c.school_year,c.organisation_id,m.label AS module_label,m.public_url,u.display_name AS teacher_name FROM learning_assignments a JOIN platform_classes c ON c.id=a.class_id JOIN modules m ON m.slug=a.module_slug JOIN users u ON u.id=a.created_by WHERE a.retain_until>?';
         $args=[time()];
         if($slug!==null){$sql.=' AND a.module_slug=?';$args[]=$slug;}
         $q=Database::connection()->prepare($sql.' ORDER BY a.created_at DESC');$q->execute($args);
         $result=[];
         foreach($q->fetchAll() as $assignment) {
-            try {self::assertAssignment($fresh,$assignment['id']);$assignment['material_access_key']=self::materialAccess($assignment);$result[]=$assignment;} catch(\RuntimeException $ignored){}
+            try {
+                self::assertAssignment($fresh,$assignment['id']);
+                if($assignment['room_code'] && !Rooms::find($assignment['room_code']))$assignment['room_code']=null;
+                $assignment['material_access_key']=self::materialAccess($assignment);$result[]=$assignment;
+            } catch(\RuntimeException $ignored){}
         }
         return $result;
     }

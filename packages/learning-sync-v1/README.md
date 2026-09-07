@@ -1,4 +1,4 @@
-# Persönliche Lernstände · 1.0.0
+# Persönliche Lernstände · 1.0.1 (Integrationsstand)
 
 Gemeinsamer, optionaler Adapter für vorhandene LernHTMLs. Anonyme Klassenräume bleiben davon unabhängig. Ohne Konto oder Zuweisung bleibt die Mitschrift lokal nutzbar.
 
@@ -14,6 +14,10 @@ Ladereihenfolge: lokale Lernwerkzeuge/Begriffskarten, Moduladapter, `work-render
 - Versionsprüfung vor dem Schreiben; Konfliktdialog statt stiller Überschreibung.
 - Höchstens drei Servervorversionen, gezielt wiederherstellbar.
 - Zugewiesener Raum und geschützter Materialzugang werden nach Berechtigungsprüfung übernommen.
+- Änderungen des zugewiesenen Raums und Materialzugangs werden bei der Sitzungsprüfung übernommen, ohne persönliche Antworten neu zu laden.
+- Archivierte Klassen bleiben lesbar; neue Eingaben werden nur lokal gespeichert. Nach Reaktivierung können ausstehende Änderungen wieder synchronisiert werden.
+- Entzogene Klassenzuweisung blendet persönliche Einträge aus und trennt den Live-Zugang. Noch nicht übertragene Einträge bleiben im bisherigen lokalen Personen-/Unterrichtsbereich erhalten, werden aber nicht mehr gesendet.
+- Das Ende des Live-Raums löscht keine Mitschriften. Der Server gibt abgelaufene oder beendete Raumverbindungen nicht mehr als aktive Verbindung aus.
 - Lehrkräfte sehen nur zugewiesene Klassen; Administration kann alle verwalten.
 - Beamer erhält genau den bewusst ausgewählten Ausschnitt, standardmäßig ohne Namen. Keine Klassenliste oder vollständige Mitschrift im öffentlichen Raumzustand.
 - Darstellung von Antworten und Begriffskarten erfolgt als Text/DOM ohne Ausführung fremder Inhalte.
@@ -23,3 +27,5 @@ Serverendpunkt `/zugang/work.php` erfordert teacher-platform 2.0.0 und Manifest 
 ## Tests
 
 `node --test packages/learning-sync-v1/tests/sync.test.cjs` prüft echte Adapterlogik einschließlich verspäteter Antworten, Zuweisungswechsel und abgelaufener Konten. PHP-Tests prüfen zusätzlich Berechtigungen, Verschlüsselung, Versionskonflikte und Beamerfreigabe.
+
+Stand 07.09.2026: sechs Adaptertests und 97 gemeinsame PHP-Prüfungen bestanden. Diese Ergänzungen sind im Repository vorbereitet, noch nicht im veröffentlichten Ethik-Build enthalten. Beim nächsten koordinierten Build `versions.learningSync` auf `1.0.1` setzen, die Cacheversion erhöhen und die zugehörige `LearningWork.php` gemeinsam veröffentlichen. Die parallel bearbeitete Ethik-Autorenquelle wurde hierfür nicht verändert.

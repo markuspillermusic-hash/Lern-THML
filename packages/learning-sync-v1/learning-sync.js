@@ -39,6 +39,15 @@
     let session=null,assignment=null,scope='',metaKey='',meta={},paused=true,saving=false,dirty=false,timer=0,conflicting=false,readOnly=false,epoch=0,connecting=false;
     const scopedControls=new Set();
     function resetScopeControls(){for(const node of scopedControls){if(node.open)node.close();node.remove();}scopedControls.clear();conflicting=false;}
+    function syncTeachingContext(selected){
+      const nextRoom=selected?.room_code||'',classroom=window.RELIGION_CLASSROOM;
+      if(nextRoom!==String(classroom?.room()||'')){if(nextRoom)classroom?.setRoom(nextRoom);else classroom?.clearRoom();}
+      window.RELIGION_COURSE_MATERIALS?.setAccess(selected?.material_access_key||'');
+    }
+    function hidePersonalContext(message){
+      ++epoch;paused=true;clearTimeout(timer);resetScopeControls();local.setStorageScope('');assignment=null;dirty=false;readOnly=true;
+      syncTeachingContext(null);select.value='';select.disabled=true;title.textContent='Dein Lernstand';status.textContent=message;
+    }
     const oldLocal=local.exportState();
     function fingerprint(payload){const p=JSON.parse(JSON.stringify(payload));delete p.title;delete p.exportedAt;delete p._savedAt;if(p.conceptMaps?.maps)Object.values(p.conceptMaps.maps).forEach(m=>delete m.summary);return JSON.stringify(p);}
     function meaningful(p){return Object.values(p.fields||{}).some(v=>String(v).trim())||Object.keys(p.learningTools?.highlights||{}).some(k=>p.learningTools.highlights[k].length)||Object.values(p.learningTools?.drawings||{}).some(d=>d.strokes?.length)||Object.values(p.conceptMaps?.maps||{}).some(m=>m.state?.edges?.length)||['A','B','C'].some(v=>p.ui?.['verdict'+v]);}
@@ -68,9 +77,8 @@
       finally{saving=false;if(dirty&&!paused&&!readOnly)timer=setTimeout(flush,7000);}}
     function changed(){if(paused||!assignment)return;dirty=fingerprint(local.exportState())!==meta.fingerprint;if(!dirty)return;status.textContent=readOnly?'Abgeschlossen · neue Änderungen nur lokal gespeichert.':'Auf diesem Gerät gespeichert · Synchronisation folgt …';clearTimeout(timer);timer=setTimeout(flush,1100);}
     async function connect(selected){const readEpoch=++epoch;clearTimeout(timer);resetScopeControls();paused=true;connecting=true;assignment=selected;dirty=false;scope=session.subject+':'+selected.id;metaKey='religion:sync:'+slug+':'+scope;meta={};try{meta=JSON.parse(localStorage.getItem(metaKey)||'{}');if(!meta||typeof meta!=='object'||Array.isArray(meta))meta={};}catch(error){}
-      local.setStorageScope(scope);readOnly=selected.status!=='active';title.textContent=`${session.name} · ${selected.class_label} · ${selected.label}`;
-      if(selected.room_code)window.RELIGION_CLASSROOM?.setRoom(selected.room_code);else window.RELIGION_CLASSROOM?.clearRoom();
-      window.RELIGION_COURSE_MATERIALS?.setAccess(selected.material_access_key||'');
+      local.setStorageScope(scope);readOnly=selected.status!=='active'||selected.class_status==='archived';title.textContent=`${session.name} · ${selected.class_label} · ${selected.label}`;
+      syncTeachingContext(selected);
       status.textContent='Persönlicher Serverstand wird geladen …';
       try{const remote=await request('read',{assignment_id:selected.id});if(epoch!==readEpoch)return;const draft=local.exportState();
         if(remote.payload){if(!meaningful(draft)||fingerprint(draft)===meta.fingerprint||fingerprint(draft)===fingerprint(remote.payload)){importRemote(remote);}else if(Number(meta.revision||0)!==remote.revision){conflict(remote);return;}}
@@ -104,7 +112,14 @@
     };
     document.addEventListener('religion-learning-state-change',changed);document.addEventListener('religion-concept-map-change',changed);window.addEventListener('online',flush);
     window.addEventListener('beforeunload',event=>{if(dirty&&!readOnly){event.preventDefault();event.returnValue='';}});
-    setInterval(async()=>{if(!assignment||saving||connecting)return;const checkedEpoch=epoch;try{const fresh=await request('session',{module_slug:slug});if(epoch!==checkedEpoch)return;if(!fresh.authenticated||fresh.subject!==session.subject||!fresh.learning_enabled){++epoch;paused=true;clearTimeout(timer);resetScopeControls();local.setStorageScope('');assignment=null;dirty=false;select.value='';select.disabled=true;title.textContent='Dein Lernstand';status.textContent='Anmeldung geändert oder abgelaufen. Persönliche Einträge wurden ausgeblendet; bitte neu anmelden.';return;}session=fresh;const found=fresh.assignments?.find(a=>a.id===assignment.id);if(!found){paused=true;status.textContent='Dieser Unterricht ist nicht mehr freigegeben. Die Gerätefassung bleibt lokal erhalten.';}else{readOnly=found.status!=='active';if(dirty)flush();}}catch(error){}},30000);
+    setInterval(async()=>{if(!assignment||saving||connecting)return;const checkedEpoch=epoch;try{
+      const fresh=await request('session',{module_slug:slug});if(epoch!==checkedEpoch)return;
+      if(!fresh.authenticated||fresh.subject!==session.subject||!fresh.learning_enabled){hidePersonalContext('Anmeldung geändert oder abgelaufen. Persönliche Einträge wurden ausgeblendet; bitte neu anmelden.');return;}
+      session=fresh;const found=fresh.assignments?.find(a=>a.id===assignment.id);
+      if(!found){hidePersonalContext('Dieser Unterricht ist nicht mehr freigegeben. Persönliche Einträge wurden ausgeblendet; die Gerätefassung bleibt getrennt gespeichert. Bitte den Zugang prüfen und die Seite neu laden.');return;}
+      const wasReadOnly=readOnly;assignment=found;readOnly=found.status!=='active'||found.class_status==='archived';syncTeachingContext(found);
+      if(readOnly!==wasReadOnly&&!conflicting&&!paused)normalStatus();if(dirty)flush();
+    }catch(error){}},30000);
   }
   document.addEventListener('religion-learning-state-ready',start,{once:true});if(window.RELIGION_LEARNING_STATE)start();
 })();
