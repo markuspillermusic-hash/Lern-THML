@@ -202,13 +202,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $targetId = (int)($_POST['user_id'] ?? 0);
             $status = in_array(($_POST['status'] ?? ''), ['active','suspended'], true) ? $_POST['status'] : '';
             if ($targetId === (int)$actor['id'] || $status === '') throw new RuntimeException('Dieses Konto kann so nicht geändert werden.');
-            $statement = Database::connection()->prepare('UPDATE users SET status=?,auth_version=?,updated_at=? WHERE id=?');
-            $statement->execute([$status, bin2hex(random_bytes(16)), time(), $targetId]);
-            if ($status === 'suspended') {
-                Database::connection()->prepare('UPDATE password_reset_tokens SET revoked_at=? WHERE user_id=? AND used_at IS NULL AND revoked_at IS NULL')->execute([time(), $targetId]);
-                Database::connection()->prepare('UPDATE ai_grants SET status="revoked",revoked_at=?,updated_at=? WHERE user_id=? AND status="active"')->execute([time(), time(), $targetId]);
-            }
-            Audit::record((int)$actor['id'], 'user.' . $status, 'user', (string)$targetId);
+            \ReligionPlatform\Identity::setAccountStatus($actor,$status,teacherId:$targetId);
             flash_redirect('Der Kontostatus wurde geändert.', '/lehrer/?view=admin');
         }
         if ($action === 'set_user_org_scope') {

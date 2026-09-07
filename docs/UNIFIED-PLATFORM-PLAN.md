@@ -5,7 +5,7 @@ Stand: 6. September 2026. Auftrag: Beide Architekturen so erweitern, dass Lehrkr
 ## Ausgangspunkt und Sicherung
 
 - PrüfungsAPP: `D:\KI-Projekte\Apps\PrüfungsAPP`, GitHub `markuspillermusic-hash/Pr-fungsAPP`, `main` bei `ad8de046201e13329112c2ce0cbe604f99720ef5`, vor Beginn sauber; Flask, SQLite, lokale Lehrerkonten, permanente Lernende, Klassen, Portal, LTI/ByCS.
-- LernHTML: `Lern-THML` ist das fachübergreifende Runtime-Repository. `_shared` ist der aktuell von den Modulbuilds verwendete Paketstand. Die ausführbaren PHP-Dateien stimmen überein; lokale Modulregistrierungen unterscheiden sich. Änderungen werden im Repository entwickelt und gezielt nach `_shared` übernommen. Lokale Inhaltsregistrierungen bleiben erhalten.
+- LernHTML: `Lern-THML` ist das fachübergreifende Runtime-Repository. Zu Beginn nutzten die Modulbuilds `_shared`. Der Ethik-Pilot bezieht seine Pakete jetzt unmittelbar aus dem Repository. `_shared` und andere Modulbuilds werden nicht automatisch umgestellt; lokale Inhaltsregistrierungen bleiben erhalten.
 - Die vorhandene PHP-Plattform auf `markuspiller.de` verwaltet bereits mehrere Organisationen, persönliche Lehrerkonten, MFA, Einladungen, Support, Räume und verschlüsselte Schlüssel. Die PrüfungsAPP auf `pruefungsapp.markuspiller.de` verwaltet eine Schule pro Installation.
 - Vollständiger lokaler Stand vor Änderungen: `D:\KI-Projekte\Archive\Lernplattform-vor-Umbau-20260906-134604`. Enthält Quellarchive einschließlich unversionierter Änderungen, gemeinsamen Paketen und Ethikmodul sowie Git-Bundles beider Repositories. Die ältere App-Konsolidierung bleibt zusätzlich erhalten.
 - Produktive Datenbanken, Uploads, Raumzustände und Konfiguration werden vor einem produktiven Eingriff nochmals konsistent gesichert und isoliert wiederhergestellt. Lokale Quellsicherungen ersetzen kein Datenbankbackup.
@@ -45,11 +45,11 @@ Bestehende Konten und Lernhistorien werden über explizite, überprüfte Identit
 ## Umsetzung und Abnahme
 
 1. [x] Aktuelle Quellen sichten und lokal sichern; Plan schriftlich festhalten.
-2. [ ] Gemeinsames Datenmodell und additive Migrationen: Identitäten, Organisationen, Produktrechte, App-Installationen, Klassen und Zuordnungen. Bestandsmigration und Wiederholbarkeit prüfen.
-3. [ ] OIDC-Anmeldung zwischen PHP und Flask mit Rollenprüfung, expliziter Kontoverknüpfung, Logout/Sperrung und unabhängigem Einzelbetrieb fertigstellen.
-4. [ ] Gemeinsame Klassenverwaltung, Schüleraktivierung und prüfbare Übernahme vorhandener App-Klassen und Lernhistorien fertigstellen.
-5. [ ] Geschützte Lernstands-API, automatische lokale/serverseitige Synchronisation, Lehrerübersicht und ausgewählte Beamerpräsentation integrieren. Ethikmodul als vollständiger Pilot; gemeinsame Pakete für alle LernHTMLs verfügbar machen.
-6. [ ] Gemeinsamen Einstieg und Adminoberflächen umsetzen: Produkte freigeben, Konten/Klassen/Installationen verwalten und Arbeitsstände einsehen. Einzel- und Kombinationsbetrieb tatsächlich bedienbar machen.
+2. [x] Gemeinsames Datenmodell und additive Migrationen: Identitäten, Organisationen, Produktrechte, App-Installationen, Klassen und Zuordnungen. Bestandsmigration und Wiederholbarkeit geprüft.
+3. [x] OIDC-Anmeldung zwischen PHP und Flask mit Rollenprüfung, expliziter Kontoverknüpfung, Logout/Sperrung und unabhängigem Einzelbetrieb implementiert und mit Testkonten geprüft.
+4. [x] Gemeinsame Klassenverwaltung, Schüleraktivierung und prüfbare Übernahme vorhandener App-Klassen und Lernhistorien implementiert. Echte Bestandszuordnungen bleiben ausdrücklich zu bestätigen.
+5. [x] Geschützte Lernstands-API, automatische lokale/serverseitige Synchronisation, Lehrerübersicht und ausgewählte Beamerpräsentation integriert und mit synthetischen Arbeitsständen geprüft. Ethikmodul veröffentlicht; gemeinsame Pakete für weitere LernHTMLs verfügbar.
+6. [x] Gemeinsamen Einstieg und Adminoberflächen umgesetzt: Produkte freigeben, Konten/Klassen/Installationen verwalten und Arbeitsstände einsehen. Einzel- und Kombinationsbetrieb mit Testkonten geprüft.
 7. [ ] Migration und Restore an Kopien, Berechtigungstests für alle Rollen und Produkte, echte HTTP-/Browserläufe mit getrennten Sitzungen, Offline-/Konfliktfälle und Regressionen beider Systeme prüfen.
 8. [ ] Versionen und Betriebsdokumentation aktualisieren, in Git sichern, veröffentlichen und entsprechend dem freigegebenen Projektworkflow deployen. Produktivrevisionen, vorhandene Konten und den Ende-zu-Ende-Unterrichtsfluss prüfen.
 
@@ -67,4 +67,4 @@ VIDIS kann später als weiterer Identitätsanbieter hinzukommen. Der jetzige Umb
 
 2026-09-06: Beide Quellen geprüft, fünf lokale Sicherungsdateien erzeugt und gehasht. Die explizit gewünschte persönliche Synchronisation erweitert die bisherigen Skillregeln zur ausschließlich lokalen Mitschrift; der anonyme Raum bleibt weiterhin getrennt. Noch keine Produktivdaten oder Zugänge umgestellt.
 
-2026-09-07: Datenmodell, OIDC, Klassenabgleich, persönliche Synchronisation und Administration implementiert; 399 App-Tests, 83 neue und 42 bestehende PHP-Prüfungen sowie JavaScript- und tatsächliche PHP/Python-Interop-Tests bestanden. Beide Anwendungen und der Ethik-Pilot veröffentlicht; Produktionsbackup mit isoliertem Restore und Migration erfolgreich. Die Verbindung zwischen den Anwendungen ist aktiviert. Persönliche Anmeldung und ausdrückliche Bestandskonto-Verknüpfung des Betreibers stehen noch aus; deshalb ist die vollständige Produktionsabnahme noch nicht abgeschlossen. Einzelheiten und Sicherungspfade im [Freigabenachweis](UNIFIED-PLATFORM-RELEASE-20260907.md).
+2026-09-07: Datenmodell, OIDC, Klassenabgleich, persönliche Synchronisation und Administration implementiert; 399 App-Tests, 95 neue und 42 bestehende PHP-Prüfungen sowie JavaScript- und tatsächliche PHP/Python-Interop-Tests bestanden. Beide Anwendungen und der Ethik-Pilot veröffentlicht; Produktionsbackup mit isoliertem Restore und Migration erfolgreich. Die Verbindung zwischen den Anwendungen ist aktiviert. Persönliche Anmeldung und ausdrückliche Bestandskonto-Verknüpfung des Betreibers stehen noch aus; deshalb ist die vollständige Produktionsabnahme noch nicht abgeschlossen. Einzelheiten und Sicherungspfade im [Freigabenachweis](UNIFIED-PLATFORM-RELEASE-20260907.md).

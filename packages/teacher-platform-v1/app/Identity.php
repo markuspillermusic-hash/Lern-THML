@@ -118,6 +118,43 @@ SQL);
         Audit::record((int)$actor['id'], 'identity.products_changed', 'principal', $subject, ['products'=>$products]);
     }
 
+    /** Both administration screens must change the same effective account status. */
+    public static function setAccountStatus(array $actor, string $status, ?string $subject = null, ?int $teacherId = null): void
+    {
+        self::assertAdmin($actor);
+        if (!in_array($status, ['active','suspended'], true) || (($subject === null) === ($teacherId === null))) {
+            throw new \InvalidArgumentException('Ungültiger Kontostatus oder Kontobezug.');
+        }
+        $db = Database::connection();
+        $query = $teacherId !== null
+            ? 'SELECT p.subject,u.id AS teacher_user_id FROM users u LEFT JOIN platform_principals p ON p.teacher_user_id=u.id WHERE u.id=?'
+            : 'SELECT subject,teacher_user_id FROM platform_principals WHERE subject=?';
+        $find = $db->prepare($query);
+        $find->execute([$teacherId ?? $subject]);
+        $target = $find->fetch();
+        if (!$target) throw new \RuntimeException('Konto nicht gefunden.');
+        if ((int)$target['teacher_user_id'] === (int)$actor['id']) throw new \RuntimeException('Das eigene Administratorkonto kann hier nicht geändert werden.');
+        $db->beginTransaction();
+        try {
+            if ($target['subject']) {
+                $db->prepare('UPDATE platform_principals SET status=?,auth_version=? WHERE subject=?')
+                    ->execute([$status,bin2hex(random_bytes(16)),$target['subject']]);
+            }
+            if ($target['teacher_user_id']) {
+                $id = (int)$target['teacher_user_id'];
+                $db->prepare('UPDATE users SET status=?,auth_version=?,updated_at=? WHERE id=?')
+                    ->execute([$status,bin2hex(random_bytes(16)),time(),$id]);
+                if ($status === 'suspended') {
+                    $db->prepare('UPDATE password_reset_tokens SET revoked_at=? WHERE user_id=? AND used_at IS NULL AND revoked_at IS NULL')->execute([time(),$id]);
+                    $db->prepare('UPDATE ai_grants SET status="revoked",revoked_at=?,updated_at=? WHERE user_id=? AND status="active"')->execute([time(),time(),$id]);
+                }
+            }
+            $db->commit();
+        } catch (\Throwable $error) { $db->rollBack(); throw $error; }
+        Audit::record((int)$actor['id'],'identity.status_changed',$target['subject']?'principal':'user',
+            (string)($target['subject'] ?? $target['teacher_user_id']),['status'=>$status]);
+    }
+
     public static function requireLearningTeacher(array $actor): void
     {
         if (!self::allows(self::teacher((int)$actor['id']), 'learning')) {

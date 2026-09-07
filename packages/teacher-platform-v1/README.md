@@ -25,10 +25,12 @@ Die Plattform ergänzt die Lernseiten um:
 - ein kontrolliertes, lehrplanbezogenes KI-Feedback-Gateway,
 - Quoten, Rate-Limits und ein inhaltsfreies Nutzungsprotokoll.
 
-Schüler brauchen weiterhin kein Konto. API-Schlüssel und Passwörter gelangen
-weder in Lern-HTMLs noch in Raumdateien, Browserstorage oder Exporte.
-Ausformulierte Antworten für das optionale KI-Feedback werden nur für den
-einzelnen Aufruf weitergeleitet und von der Plattform nicht gespeichert.
+Ohne persönliche Synchronisation können Schüler die Lernseiten weiterhin ohne
+Konto bearbeiten. Im zugewiesenen, angemeldeten Unterricht speichert der neue
+Lernstandsbereich Mitschriften verschlüsselt für die zuständigen Lehrkräfte.
+API-Schlüssel und Passwörter gelangen weder in Lern-HTMLs noch in Raumdateien,
+Browserstorage oder Exporte. Das getrennte KI-Gateway leitet Antworten nur für
+den einzelnen Feedbackaufruf weiter und führt selbst kein Antwortarchiv.
 
 Der Mailversand ist vom Konto- und Anfragefluss entkoppelt: Eine Anfrage wird
 auch bei einem SMTP-Ausfall gespeichert. Genehmigungen bleiben sichtbar; der

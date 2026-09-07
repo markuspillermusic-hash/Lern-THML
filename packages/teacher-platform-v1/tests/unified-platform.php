@@ -229,6 +229,25 @@ SchoolDirectory::setLearnerMembership($admin,$class['id'],$student['subject'],1,
 check(ReligionPlatform\LearningWork::read($workStudent,$assignment)['revision']===2,'reactivation retains the same identity and work');
 Auth::login('assessment','A long test password 2026');
 check(Auth::currentUser()===null && Auth::currentUser(null)!==null && Identity::current()['role']==='teacher','assessment-only login cannot enter legacy lesson adapters but stays signed into shared portal');
+rejects(fn()=>Identity::setAccountStatus($both,'active',subject:$l['subject']),'ordinary teacher cannot reactivate accounts');
+rejects(fn()=>Identity::setAccountStatus($admin,'suspended',teacherId:(int)$admin['id']),'administrator cannot suspend their own account');
+rejects(fn()=>Identity::setAccountStatus($admin,'active',subject:'missing'),'unknown account cannot be reported as activated');
+$previousVersion=Identity::find($e['subject'])['version'];
+Identity::setAccountStatus($admin,'suspended',subject:$e['subject']);
+check(Identity::find($e['subject'])===null && $db->query('SELECT status FROM users WHERE id='.(int)$assessment['id'])->fetchColumn()==='suspended','shared suspension also suspends the legacy teacher account');
+check(Auth::currentUser(null)===null,'suspension invalidates an existing teacher session');
+Identity::setAccountStatus($admin,'active',teacherId:(int)$assessment['id']);
+check(Identity::find($e['subject'])!==null && Identity::find($e['subject'])['version']!==$previousVersion,'legacy reactivation restores shared access without reviving old sessions');
+$db->prepare('UPDATE users SET status="suspended" WHERE id=?')->execute([(int)$assessment['id']]);
+Identity::setAccountStatus($admin,'active',subject:$e['subject']);
+check(Identity::find($e['subject'])!==null,'shared reactivation also clears a pre-existing legacy suspension');
+$notYetLinked=teacher('not-yet-linked',1);
+Identity::setAccountStatus($admin,'suspended',teacherId:(int)$notYetLinked['id']);
+check($db->query('SELECT status FROM users WHERE id='.(int)$notYetLinked['id'])->fetchColumn()==='suspended','legacy account can be managed before first shared login');
+Identity::setAccountStatus($admin,'suspended',subject:$student['subject']);
+check(Identity::find($student['subject'])===null,'same status action handles learner accounts');
+Identity::setAccountStatus($admin,'active',subject:$student['subject']);
+check(Identity::find($student['subject'])!==null,'learner reactivation preserves the stable subject');
 echo 'All '.$checks.' shared-platform checks passed.' . "\n";
 if (in_array('--json-contract',$argv,true)) {
     echo 'OIDC_CONTRACT=' . json_encode(['tokens'=>$tokens,'jwks'=>$jwks,'nonce'=>$request['nonce']],JSON_THROW_ON_ERROR|JSON_UNESCAPED_SLASHES) . "\n";

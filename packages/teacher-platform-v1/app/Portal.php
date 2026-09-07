@@ -105,10 +105,7 @@ SQL)->fetchAll();
         if($action==='set_status') {
             $subject=(string)($input['subject'] ?? '');
             $status=(string)($input['status'] ?? '');
-            if($subject===$identity['subject']) throw new \RuntimeException('Das eigene Administratorkonto kann hier nicht gesperrt werden.');
-            if(!in_array($status,['active','suspended'],true)) throw new \RuntimeException('Ungültiger Kontostatus.');
-            Database::connection()->prepare('UPDATE platform_principals SET status=?,auth_version=? WHERE subject=?')->execute([$status,bin2hex(random_bytes(16)),$subject]);
-            Audit::record((int)$actor['id'],'identity.status_changed','principal',$subject,['status'=>$status]);
+            Identity::setAccountStatus($actor,$status,subject:$subject);
             return '/zugang/?view=admin';
         }
         if($action==='register_client') {
