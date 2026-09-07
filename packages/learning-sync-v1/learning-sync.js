@@ -21,6 +21,7 @@
   }
   if(view==='teacher') {
     function teacherEntry(){const target=document.querySelector('[data-live-room-root]')||document.querySelector('#vorbereitung .wrap')||document.querySelector('main');if(!target)return;
+      if(cfg.teachingEntry && window.LearningTeachingEntry){window.LearningTeachingEntry.install({target,slug,cfg,request});return;}
       const bar=el('section',undefined,{class:'learning-sync-bar'});bar.append(el('strong','Klasse und Schülerstände'),el('p','Lernweg einer Klasse zuweisen, Mitschriften abrufen und eine ausgewählte Lösung am Beamer zeigen.'));
       const actions=el('div',undefined,{class:'work-actions'}),button=el('button','Schülerstände öffnen',{type:'button'}),link=el('a','Gemeinsame Klassenverwaltung',{href:'/zugang/?view=classes',target:'_blank',rel:'noopener'});actions.append(button,link);bar.append(actions);target.append(bar);
       button.addEventListener('click',()=>{if(location.protocol==='file:'){alert('Die Schülerstände sind in der Serverversion verfügbar.');return;}
@@ -36,6 +37,10 @@
     bar.append(title,status,actions);const main=document.querySelector('main');if(!main)return;main.prepend(bar);
     const login=el('a','Gemeinsamen Zugang öffnen',{href:'/zugang/?next='+encodeURIComponent(location.pathname+location.search)});actions.append(login);
     if(location.protocol==='file:'){status.textContent='Lokale Fassung · Deine Einträge bleiben auf diesem Gerät. Die persönliche Synchronisation ist in der Serverversion verfügbar.';login.href='https://markuspiller.de'+(cfg.studentUrl||'/zugang/');login.textContent='Serverversion öffnen';return;}
+    if(new URLSearchParams(location.search).get('teilnahme')==='ohne-klasse'){
+      status.textContent='Unterricht ohne Klassenzuordnung · Deine Mitschrift bleibt auf diesem Gerät. Freigaben, Timer und anonyme Abstimmungen laufen über den Raum.';
+      login.textContent='Zu meinem persönlichen Unterricht';login.href='/zugang/';return;
+    }
     let session=null,assignment=null,scope='',metaKey='',meta={},paused=true,saving=false,dirty=false,timer=0,conflicting=false,readOnly=false,epoch=0,connecting=false;
     const scopedControls=new Set();
     function resetScopeControls(){for(const node of scopedControls){if(node.open)node.close();node.remove();}scopedControls.clear();conflicting=false;}

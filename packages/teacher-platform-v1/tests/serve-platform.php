@@ -12,7 +12,14 @@ file_put_contents($temp.'/config.php','<?php return '.var_export([
 ],true).';');
 putenv('TEACHER_PLATFORM_CONFIG='.$temp.'/config.php');
 putenv('TEACHER_PLATFORM_BOOTSTRAP='.dirname(__DIR__).'/app/bootstrap.php');
-putenv('TEACHER_PLATFORM_ROOM_DATA='.$temp.'/ethik-rooms');
+putenv('TEACHER_PLATFORM_ROOM_DATA='.$temp.'/modules/kr13-1-1-ethische-grundlegung/rooms');
+$lessonApi=dirname(__DIR__,4).'/13/13.1.1 Ethische Grundlegung/dist/api/live.php';
+$source=file_get_contents($lessonApi);
+$marker="if (\$action === 'create') {";
+if(substr_count($source,$marker)!==1)throw new RuntimeException('QA hook marker is not unique');
+$hook=var_export(dirname(__DIR__,2).'/learning-sync-v1/live-teaching-hook.php',true);
+file_put_contents($temp.'/live.php',str_replace($marker,'require '.$hook.";\n".$marker,$source));
+putenv('TEACHER_PLATFORM_QA_LIVE_API='.$temp.'/live.php');
 require dirname(__DIR__).'/app/bootstrap.php';
 use ReligionPlatform\Database;
 use ReligionPlatform\Identity;

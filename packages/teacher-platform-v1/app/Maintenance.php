@@ -31,7 +31,24 @@ final class Maintenance
             $result[$name] = $statement->rowCount();
         }
         $result['room_files'] = self::cleanupRoomFiles((string)Config::get('data_dir') . '/modules', $now);
+        $result['teaching_start_files'] = self::cleanupTeachingStarts((string)Config::get('data_dir') . '/teaching-starts', $now);
         return $result;
+    }
+
+    private static function cleanupTeachingStarts(string $root, int $now): int
+    {
+        $removed=0;
+        foreach(glob($root.'/*.json') ?: [] as $path) {
+            if(is_link($path) || !preg_match('/^[a-f0-9]{64}\.json$/D',basename($path)))continue;
+            $handle=@fopen($path,'r+');if(!$handle)continue;
+            try {
+                if(!flock($handle,LOCK_EX|LOCK_NB))continue;
+                $state=json_decode(stream_get_contents($handle,4096) ?: '{}',true);
+                $expiry=is_array($state)?(int)($state['expires_at'] ?? 0):0;
+                if($expiry>0 && $expiry<$now-86400 && @unlink($path))$removed++;
+            } finally {flock($handle,LOCK_UN);fclose($handle);}
+        }
+        return $removed;
     }
 
     private static function cleanupRoomFiles(string $moduleRoot, int $now): int

@@ -31,7 +31,9 @@ try {
             $result=['authenticated'=>(bool)$identity,'login_url'=>'/zugang/'];
             if($identity)$result+=['subject'=>$identity['subject'],'kind'=>$identity['kind'],'role'=>$identity['role'],'name'=>$identity['display_name'],'csrf'=>Security::csrf(),'learning_enabled'=>Identity::allows($identity,'learning'),'assignments'=>LearningWork::assignments($identity,$slug ?: null)];
             if($identity && $identity['kind']==='teacher' && Identity::allows($identity,'learning')) {
+                $result['teacher_user_id']=(int)$identity['teacher_user_id'];
                 $result['classes']=SchoolDirectory::classes(['id'=>(int)$identity['teacher_user_id']]);$result['modules']=[];
+                foreach($result['classes'] as &$class){try{SchoolDirectory::assertClass(['id'=>(int)$identity['teacher_user_id']],$class['id'],true);$class['can_teach']=Identity::allows($identity,'learning',(int)$class['organisation_id']);}catch(RuntimeException $ignored){$class['can_teach']=false;}}unset($class);
                 foreach(ReligionPlatform\Modules::all() as $module){try{LearningWork::contract($module['slug']);$result['modules'][]=['slug'=>$module['slug'],'label'=>$module['label']];}catch(RuntimeException $ignored){}}
             }
         } else {

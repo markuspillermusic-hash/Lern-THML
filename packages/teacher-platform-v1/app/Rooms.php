@@ -7,7 +7,7 @@ use PDO;
 
 final class Rooms
 {
-    public static function mirror(string $code, string $moduleSlug, array $owner, array $state): void
+    public static function mirror(string $code, string $moduleSlug, array $owner, array $state, ?int $organisationId = null): void
     {
         Identity::requireLearningTeacher($owner);
         $code = strtoupper(Security::clean($code, 6));
@@ -15,12 +15,16 @@ final class Rooms
             throw new \InvalidArgumentException('Raum oder Besitzer ist ungültig.');
         }
         $now = time();
-        $orgId = Auth::defaultOrganisationId((int)$owner['id']) ?: null;
+        $existing=self::find($code,false);
+        if($existing && ($existing['module_slug']!==$moduleSlug || (int)$existing['owner_user_id']!==(int)$owner['id']))throw new \RuntimeException('Dieser Raumcode ist bereits einem anderen Unterricht zugeordnet. Bitte erneut starten.');
+        $orgId = $organisationId ?? (Auth::defaultOrganisationId((int)$owner['id']) ?: null);
+        if($orgId!==null && !Identity::allows(Identity::teacher((int)$owner['id']),'learning',$orgId))throw new \RuntimeException('Die Organisation ist für diesen Unterricht nicht freigegeben.');
         $statement = Database::connection()->prepare(<<<'SQL'
 INSERT INTO rooms(code,module_slug,owner_user_id,organisation_id,label,created_at,expires_at,ended_at,ai_feedback_enabled,ai_request_limit,ai_request_count,updated_at)
 VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
 ON CONFLICT(code) DO UPDATE SET module_slug=excluded.module_slug,label=excluded.label,expires_at=excluded.expires_at,
 ended_at=NULL,ai_feedback_enabled=excluded.ai_feedback_enabled,updated_at=excluded.updated_at
+WHERE rooms.module_slug=excluded.module_slug AND rooms.owner_user_id=excluded.owner_user_id
 SQL);
         $statement->execute([
             $code,
@@ -36,6 +40,7 @@ SQL);
             0,
             $now,
         ]);
+        if($statement->rowCount()!==1)throw new \RuntimeException('Dieser Raumcode ist bereits einem anderen Unterricht zugeordnet. Bitte erneut starten.');
     }
 
     public static function find(string $code, bool $activeOnly = true): ?array
