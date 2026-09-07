@@ -511,4 +511,4 @@ page_head('Lehrerbereich · Religionsunterricht');
     <form method="post" class="inline-form"><input type="hidden" name="csrf" value="<?= Security::h($csrf) ?>"><input type="hidden" name="form_action" value="test_mail"><label>Testnachricht an<input type="email" name="test_to" value="<?= Security::h((string)($mailSummary['notify_to'] ?? 'markus.piller@jmf-gymnasium.de')) ?>" required></label><button type="submit">Testnachricht bewusst senden</button></form>
   </details>
 <?php else: ?><p class="alert error">Diese Seite ist nicht verfügbar.</p><?php endif; ?>
-</main></div><footer>Lehrerplattform v1.1.1 · datensparsame Plattform für interaktive Lernpfade</footer></body></html>
+</main></div><footer>Lehrerplattform v2.1.0 · datensparsame Plattform für interaktive Lernpfade</footer></body></html>

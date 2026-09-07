@@ -42,7 +42,7 @@ LEFT JOIN platform_learners l ON l.subject=p.subject ORDER BY p.kind,display_nam
 SQL)->fetchAll();
     }
 
-    public static function action(array $input): string
+    public static function action(array $input,array $files=[]): string
     {
         if (!Security::verifyCsrf(is_string($input['csrf'] ?? null)?$input['csrf']:null)) throw new \RuntimeException('Das Formular ist abgelaufen. Bitte neu laden.');
         $action=(string)($input['action'] ?? '');
@@ -75,6 +75,23 @@ SQL)->fetchAll();
             $credential=SchoolDirectory::createLearner($actor,$class,(string)($input['name'] ?? ''),(string)($input['username'] ?? ''),(int)($input['number'] ?? 0),is_array($input['products'] ?? null)?$input['products']:[]);
             $_SESSION['shared_portal_once']=$credential;
             return '/zugang/?view=classes&class='.$class;
+        }
+        if($action==='roster_preview') {
+            $class=(string)($input['class_id'] ?? '');
+            $entries=RosterImport::parse(is_array($files['roster_file'] ?? null)?$files['roster_file']:[],(string)($input['roster_text'] ?? ''),(string)($input['column_mode'] ?? 'last_first'));
+            $products=is_array($input['products'] ?? null)?$input['products']:[];
+            $plan=SchoolDirectory::previewRoster($actor,$class,$entries,$products);
+            $token=bin2hex(random_bytes(24));
+            $_SESSION['shared_roster_preview']=['token'=>$token,'expires_at'=>time()+900,'class_id'=>$class,'entries'=>$entries,'products'=>$plan['products'],'plan'=>$plan];
+            return '/zugang/?view=classes&class='.rawurlencode($class).'&roster_preview='.$token;
+        }
+        if($action==='roster_import') {
+            $pending=$_SESSION['shared_roster_preview'] ?? null;$token=(string)($input['preview_token'] ?? '');
+            if(!is_array($pending) || ($pending['expires_at'] ?? 0)<time() || !hash_equals((string)($pending['token'] ?? ''),$token)) throw new \RuntimeException('Die Vorschau ist abgelaufen. Bitte die Liste erneut prüfen.');
+            $result=SchoolDirectory::importRoster($actor,(string)$pending['class_id'],$pending['entries'],$pending['products']);
+            unset($_SESSION['shared_roster_preview']);
+            $_SESSION['shared_roster_credentials']=$result['credentials'];
+            return '/zugang/?view=classes&class='.rawurlencode((string)$pending['class_id']);
         }
         if($action==='set_teacher') {
             SchoolDirectory::setTeacher($actor,(string)($input['class_id'] ?? ''),(int)($input['teacher_id'] ?? 0),(string)($input['role'] ?? '') ?: null);

@@ -50,7 +50,8 @@ final class DirectoryBridge
     public static function preview(array $context,array $input): array
     {
         $identity=$context['identity']; $client=$context['client'];
-        if ($identity['role']!=='admin' || $client['product']!=='assessment') throw new \RuntimeException('access_denied');
+        if ($identity['kind']!=='teacher' || $client['product']!=='assessment'
+            || !Identity::allows($identity,'assessment',(int)$client['organisation_id'])) throw new \RuntimeException('access_denied');
         $source=$input['class'] ?? null;
         if (!is_array($source) || !preg_match('/^[1-9][0-9]{0,9}$/D',(string)($source['external_id'] ?? '')) || !is_array($source['learners'] ?? null) || count($source['learners'])>100) throw new \InvalidArgumentException('Ungültige Klasse; höchstens 100 Personen je Übernahme.');
         $id=self::linked($client['client_id'],'class',(string)$source['external_id']) ?: (string)($source['platform_id'] ?? '');
@@ -81,6 +82,12 @@ final class DirectoryBridge
             if($subject) {
                 $existing=Identity::find($subject);
                 if(!$existing || $existing['kind']!=='student' || (int)$existing['learner_org']!==(int)$client['organisation_id'] || isset($subjects[$subject])) throw new \RuntimeException('Schülerzuordnung nicht möglich.');
+                if($identity['role']!=='admin') {
+                    $q=Database::connection()->prepare('SELECT 1 FROM platform_class_learners r JOIN platform_class_teachers t ON t.class_id=r.class_id WHERE r.subject=? AND r.active=1 AND t.teacher_user_id=? AND t.role IN ("owner","editor")');
+                    $q->execute([$subject,(int)$identity['teacher_user_id']]);
+                    $linked=self::linked($client['client_id'],'student',$external);
+                    if(!$q->fetchColumn() && $linked!==$subject) throw new \RuntimeException('Schülerzuordnung nicht möglich.');
+                }
                 $subjects[$subject]=true;
             } else {
                 $q=Database::connection()->prepare('SELECT subject FROM platform_learners WHERE organisation_id=? AND username=?');
