@@ -122,7 +122,10 @@ final class LearningWork
         $fields=[];
         foreach(($payload['fields'] ?? []) as $key=>$value) {
             if(!isset($contract['fields'][$key])) continue;
-            if(!is_string($value) || mb_strlen($value)>30000) throw new \InvalidArgumentException('Ein Antwortfeld ist zu groß oder ungültig.');
+            $valueLength = is_string($value)
+                ? (function_exists('mb_strlen') ? mb_strlen($value, 'UTF-8') : strlen($value))
+                : null;
+            if($valueLength === null || $valueLength > 30000) throw new \InvalidArgumentException('Ein Antwortfeld ist zu groß oder ungültig.');
             $fields[$key]=$value;
         }
         $ui=[];$checks=[];
